@@ -6,12 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,6 +14,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.newsrecommendation.ui.viewmodel.RegisterViewModel
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun RegisterScreen(
@@ -76,10 +72,7 @@ fun RegisterScreen(
         // Nút đăng ký
         Button(
             onClick = {
-                if(viewModel.validateRegister()){
-                    viewModel.setLoading(true)
-//                    viewModel.setSuccess("Dữ liệu hợp lệ")
-                }
+                viewModel.register()
             },
             enabled = !viewModel.uiState.isLoading,
             modifier = Modifier.fillMaxWidth()
@@ -98,6 +91,14 @@ fun RegisterScreen(
             Text(
                 text = viewModel.uiState.errorMessage,
                 color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        // Thông báo đăng ký thành công
+        if (viewModel.uiState.successMessage.isNotEmpty()) {
+            Text(
+                text = viewModel.uiState.successMessage,
+                color = Color(0xFF2E7D32)
             )
         }
 

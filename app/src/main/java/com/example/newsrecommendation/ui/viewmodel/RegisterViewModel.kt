@@ -1,9 +1,11 @@
 package com.example.newsrecommendation.ui.viewmodel
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.newsrecommendation.api.RetrofitClient
+import com.example.newsrecommendation.model.RegisterRequest
+import kotlinx.coroutines.*
 
 class RegisterViewModel : ViewModel() {
 
@@ -39,6 +41,9 @@ class RegisterViewModel : ViewModel() {
             password.isBlank() ->
                 "Bạn chưa nhập mật khẩu"
 
+            password.length < 8 ->
+                "Mật khẩu phải có ít nhất 8 ký tự"
+
             confirmPassword.isBlank() ->
                 "Bạn chưa xác nhận mật khẩu"
 
@@ -69,5 +74,47 @@ class RegisterViewModel : ViewModel() {
             errorMessage = "",
             successMessage = message
         )
+    }
+
+    fun setError(message: String) {
+        uiState = uiState.copy(
+            isLoading = false,
+            errorMessage = message,
+            successMessage = ""
+        )
+    }
+
+    fun register() {
+        if(uiState.isLoading || !validateRegister()) {
+            return
+        }
+
+        val request = RegisterRequest(
+            email = email.trim(),
+            password = password
+        )
+
+        setLoading(true)
+
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.apiService.register(request)
+
+                if(response.isSuccessful){
+                    setSuccess("Đăng ký thành công")
+                } else {
+                    val message = when(response.code()){
+                        409 -> "Email đã được đăng ký"
+                        422 -> "Thông tin đăng ký không hợp lệ"
+                        else -> "Đăng ký thất bại, vui lòng thử lại"
+                    }
+                    setError(message)
+                }
+            } catch (e: CancellationException){
+                throw e
+            } catch (e: Exception) {
+                setError("Không thể hoàn tất đăng ký, vui lòng thử lại")
+            }
+        }
     }
 }

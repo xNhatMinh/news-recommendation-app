@@ -1,9 +1,9 @@
 package com.example.newsrecommendation.api
-import com.example.newsrecommendation.model.RecommendationResponse
 import retrofit2.http.Body
 import retrofit2.http.POST
 import retrofit2.http.GET
 import retrofit2.Response
+import com.example.newsrecommendation.model.*
 
 
 data class HealthResponse(
@@ -26,4 +26,9 @@ interface ApiService {
     suspend fun getRecommendations(
         @Body request: RecommendationRequest
     ): Response<RecommendationResponse>
+
+    @POST("auth/register")
+    suspend fun register(
+        @Body request: RegisterRequest
+    ) : Response<RegisterRequest>
 }
