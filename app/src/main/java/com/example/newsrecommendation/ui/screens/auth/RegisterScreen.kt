@@ -21,6 +21,11 @@ fun RegisterScreen(
     onLoginClick: () -> Unit,
     viewModel: RegisterViewModel = viewModel()
 ) {
+    val email = viewModel.email
+    val password = viewModel.password
+    val confirmPassword = viewModel.confirmPassword
+    val uiState = viewModel.uiState
+
     Column(
         modifier = Modifier
             .fillMaxSize(),
@@ -33,7 +38,7 @@ fun RegisterScreen(
 
         // Email
         TextField(
-            value = viewModel.email,
+            value = email,
             onValueChange = {
                 viewModel.onEmailChange(it)
             },
@@ -45,7 +50,7 @@ fun RegisterScreen(
 
         // Mật khẩu
         TextField(
-            value = viewModel.password,
+            value = password,
             onValueChange = {
                 viewModel.onPasswordChange(it)
             },
@@ -58,7 +63,7 @@ fun RegisterScreen(
 
         // Xác nhận mật khẩu
         TextField(
-            value = viewModel.confirmPassword,
+            value = confirmPassword,
             onValueChange = {
                 viewModel.onConfirmPasswordChange(it)
             },
@@ -74,10 +79,10 @@ fun RegisterScreen(
             onClick = {
                 viewModel.register()
             },
-            enabled = !viewModel.uiState.isLoading,
+            enabled = !uiState.isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            if(viewModel.uiState.isLoading){
+            if(uiState.isLoading){
                 CircularProgressIndicator()
             } else {
                 Text("Đăng ký")
@@ -87,17 +92,17 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Thông báo lỗi
-        if (viewModel.uiState.errorMessage.isNotEmpty()) {
+        if (uiState.errorMessage.isNotEmpty()) {
             Text(
-                text = viewModel.uiState.errorMessage,
+                text = uiState.errorMessage,
                 color = MaterialTheme.colorScheme.error
             )
         }
 
         // Thông báo đăng ký thành công
-        if (viewModel.uiState.successMessage.isNotEmpty()) {
+        if (uiState.successMessage.isNotEmpty()) {
             Text(
-                text = viewModel.uiState.successMessage,
+                text = uiState.successMessage,
                 color = Color(0xFF2E7D32)
             )
         }

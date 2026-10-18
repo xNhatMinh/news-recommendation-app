@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -19,18 +20,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.newsrecommendation.ui.viewmodel.LoginViewModel
 
 
 @Composable
 fun LoginScreen(
-    onRegisterClick: () -> Unit
+    onRegisterClick: () -> Unit,
+    viewModel: LoginViewModel = viewModel()
 ){
-    var email by remember { mutableStateOf("") }
-
-    var password by remember { mutableStateOf("") }
-
+    val email = viewModel.email
+    val password = viewModel.password
+    val uiState = viewModel.uiState
     var errorMessage by remember { mutableStateOf("") }
 
     Column (
@@ -45,8 +49,7 @@ fun LoginScreen(
         TextField(
             value = email,
             onValueChange = {
-                email = it
-                errorMessage = ""
+                viewModel.onEmailChange(it)
             },
             label = { Text("Email")},
             modifier = Modifier.fillMaxWidth()
@@ -57,8 +60,7 @@ fun LoginScreen(
         TextField(
             value = password,
             onValueChange = {
-                password = it
-                errorMessage = ""
+                viewModel.onPasswordChange(it)
             },
             label = { Text("Mật khẩu") },
             visualTransformation = PasswordVisualTransformation(),
@@ -69,17 +71,30 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                if (email.isEmpty()) {
-                    errorMessage = "Bạn chưa nhập email"
-                } else if (password.isEmpty()) {
-                    errorMessage = "Bạn chưa nhập mật khẩu"
-                } else {
-                    errorMessage = ""
-                }
+                viewModel.login()
             },
+            enabled = !uiState.isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Đăng nhập")
+            if (uiState.isLoading) {
+                CircularProgressIndicator()
+            } else {
+                Text("Đăng nhập")
+            }
+        }
+
+        if (uiState.errorMessage.isNotEmpty()) {
+            Text(
+                text = uiState.errorMessage,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        if (uiState.successMessage.isNotEmpty()) {
+            Text(
+                text = uiState.successMessage,
+                color = Color(0xFF2E7D32)
+            )
         }
 
         if (errorMessage.isNotEmpty()) {
