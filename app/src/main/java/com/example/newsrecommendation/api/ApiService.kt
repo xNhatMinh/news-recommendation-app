@@ -4,6 +4,8 @@ import retrofit2.http.POST
 import retrofit2.http.GET
 import retrofit2.Response
 import com.example.newsrecommendation.model.*
+import com.example.newsrecommendation.model.UserResponse
+import retrofit2.http.Header
 
 
 data class HealthResponse(
@@ -36,4 +38,9 @@ interface ApiService {
     suspend fun login(
         @Body request: LoginRequest
     ): Response<LoginResponse>
+
+    @GET("auth/me")
+    suspend fun getCurrentUser(
+        @Header("Authorization") authorization: String
+    ) : Response<UserResponse>
 }

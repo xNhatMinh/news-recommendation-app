@@ -4,13 +4,21 @@ import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
 import com.example.newsrecommendation.api.RetrofitClient
 import com.example.newsrecommendation.model.LoginRequest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import com.example.newsrecommendation.storage.TokenManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-class LoginViewModel : ViewModel() {
+class LoginViewModel (
+    application: Application
+) : AndroidViewModel(application) {
+
+    private val tokenManager = TokenManager(application)
 
     var email by mutableStateOf("")
         private set
@@ -62,16 +70,18 @@ class LoginViewModel : ViewModel() {
     fun setSuccess(message: String) {
         uiState = uiState.copy(
             isLoading = false,
+            successMessage = message,
             errorMessage = "",
-            successMessage = message
+            isLoggedIn = true
         )
     }
 
     fun setError(message: String) {
         uiState = uiState.copy(
             isLoading = false,
+            successMessage = "",
             errorMessage = message,
-            successMessage = ""
+            isLoggedIn = false
         )
     }
 
@@ -92,7 +102,20 @@ class LoginViewModel : ViewModel() {
                 val response = RetrofitClient.apiService.login(request)
 
                 if (response.isSuccessful) {
-                    setSuccess("Đăng nhập thành công")
+                    val token = response.body()?.access_token
+
+                    if(token.isNullOrBlank()) {
+                        setError("Backend không trả về token hợp lệ")
+                    } else {
+                        // đa luồng
+                        // chuyển việc ghi file sang luồng dành cho đọc/ghi dữ liệu
+                        // giúp giao diện không bị chặn.
+                        withContext(Dispatchers.IO) {
+                            tokenManager.saveToken(token)
+                        }
+
+                        setSuccess("Đăng nhập thành công")
+                    }
                 } else {
                     val message = when (response.code()) {
                         401 -> "Email hoặc mật khẩu không đúng"
@@ -105,6 +128,44 @@ class LoginViewModel : ViewModel() {
                 throw e
             } catch (e: Exception) {
                 setError("Không thể hoàn tất đăng nhập, vui lòng thử lại")
+            }
+        }
+    }
+
+    fun checkSavedLogin() {
+        if (uiState.isLoading) return
+        setLoading(true)
+
+        viewModelScope.launch {
+            try {
+                val token = withContext(Dispatchers.IO) {
+                    tokenManager.getToken()
+                }
+
+                if (token.isNullOrBlank()) {
+                    setLoading(false)
+                    return@launch
+                }
+
+                val response = RetrofitClient.apiService
+                    .getCurrentUser("Bearer $token")
+
+                when (response.code()) {
+                    200 -> setSuccess("Bạn đã đăng nhập")
+
+                    401 -> {
+                        withContext(Dispatchers.IO) {
+                            tokenManager.clearToken()
+                        }
+                        setLoading(false)
+                    }
+
+                    else -> setError("Chưa kiểm tra được phiên đăng nhập")
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                setError("Không thể kiểm tra phiên đăng nhập")
             }
         }
     }

@@ -25,17 +25,29 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.newsrecommendation.ui.viewmodel.LoginViewModel
+import androidx.compose.runtime.LaunchedEffect
 
 
 @Composable
 fun LoginScreen(
     onRegisterClick: () -> Unit,
+    onLoginSuccess: () -> Unit,
     viewModel: LoginViewModel = viewModel()
 ){
     val email = viewModel.email
     val password = viewModel.password
     val uiState = viewModel.uiState
     var errorMessage by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        viewModel.checkSavedLogin()
+    }
+
+    LaunchedEffect(uiState.isLoggedIn) {
+        if (uiState.isLoggedIn) {
+            onLoginSuccess()
+        }
+    }
 
     Column (
         modifier = Modifier.fillMaxSize(),
