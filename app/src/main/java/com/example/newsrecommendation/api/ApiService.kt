@@ -1,7 +1,5 @@
 package com.example.newsrecommendation.api
-import retrofit2.http.Body
-import retrofit2.http.POST
-import retrofit2.http.GET
+import retrofit2.http.*
 import retrofit2.Response
 import com.example.newsrecommendation.model.*
 import com.example.newsrecommendation.model.UserResponse
@@ -43,4 +41,15 @@ interface ApiService {
     suspend fun getCurrentUser(
         @Header("Authorization") authorization: String
     ) : Response<UserResponse>
+
+    @GET("preferences")
+    suspend fun getPreferences(
+        @Header("Authorization") authorization: String
+    ): Response<PreferencesResponse>
+
+    @PUT("preferences")
+    suspend fun savePreferences(
+        @Header("Authorization") authorization: String,
+        @Body request: PreferencesRequest
+    ): Response<SavePreferencesResponse>
 }

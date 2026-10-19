@@ -9,10 +9,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Button
 
-
 @Composable
 fun HomeScreen(
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    onPreferencesClick: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -23,6 +23,10 @@ fun HomeScreen(
 
         Button(onClick = onLogoutClick) {
             Text("Đăng xuất")
+        }
+
+        Button(onClick = onPreferencesClick) {
+            Text("Chủ đề yêu thích")
         }
     }
 }

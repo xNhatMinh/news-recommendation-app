@@ -15,6 +15,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.newsrecommendation.ui.viewmodel.RegisterViewModel
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
 
 @Composable
 fun RegisterScreen(
@@ -25,50 +33,88 @@ fun RegisterScreen(
     val password = viewModel.password
     val confirmPassword = viewModel.confirmPassword
     val uiState = viewModel.uiState
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .background(Color(0xFFF5F7FA))
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Đăng ký tài khoản")
+        Text(
+            text = "Đăng ký tài khoản",
+            style = MaterialTheme.typography.headlineMedium
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Email
-        TextField(
+        OutlinedTextField(
             value = email,
             onValueChange = {
                 viewModel.onEmailChange(it)
             },
             label = { Text("Email") },
+            singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Mật khẩu
-        TextField(
+        OutlinedTextField(
             value = password,
             onValueChange = {
                 viewModel.onPasswordChange(it)
             },
             label = { Text("Mật khẩu") },
-            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            visualTransformation = if (passwordVisible) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            trailingIcon = {
+                TextButton(
+                    onClick = {
+                        passwordVisible = !passwordVisible
+                    }
+                ) {
+                    Text(if (passwordVisible) "Ẩn" else "Hiện")
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Xác nhận mật khẩu
-        TextField(
+        OutlinedTextField(
             value = confirmPassword,
             onValueChange = {
                 viewModel.onConfirmPasswordChange(it)
             },
             label = { Text("Xác nhận mật khẩu") },
-            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            visualTransformation = if (confirmPasswordVisible) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            trailingIcon = {
+                TextButton(
+                    onClick = {
+                        confirmPasswordVisible = !confirmPasswordVisible
+                    }
+                ) {
+                    Text(if (confirmPasswordVisible) "Ẩn" else "Hiện")
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -80,7 +126,14 @@ fun RegisterScreen(
                 viewModel.register()
             },
             enabled = !uiState.isLoading,
-            modifier = Modifier.fillMaxWidth()
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF2563EB),
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
         ) {
             if(uiState.isLoading){
                 CircularProgressIndicator()

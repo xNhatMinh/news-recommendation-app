@@ -13,6 +13,7 @@ import com.example.newsrecommendation.storage.TokenManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.newsrecommendation.ui.screens.preferences.PreferencesScreen
 
 @Composable
 fun AppNavHost(){
@@ -65,9 +66,14 @@ fun AppNavHost(){
                             launchSingleTop = true
                         }
                     }
-                }
-
+                },
+                onPreferencesClick = {
+                    navController.navigate(Routes.PREFERENCES)
+                },
             )
+        }
+        composable(Routes.PREFERENCES) {
+            PreferencesScreen()
         }
     }
 }
