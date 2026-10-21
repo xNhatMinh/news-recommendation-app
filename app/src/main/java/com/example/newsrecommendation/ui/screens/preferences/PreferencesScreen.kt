@@ -41,19 +41,23 @@ fun PreferencesScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        for (topic in topics) {
+        for (rowTopics in topics.chunked(2)) {
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Checkbox(
-                    checked = topic in uiState.selectedTopics,
-                    onCheckedChange = {
-                        viewModel.toggleTopic(topic)
-                    },
-                    enabled = !uiState.isLoading
-                )
-
-                Text(text = topic)
+                for (topic in rowTopics) {
+                    FilterChip(
+                        selected = topic in uiState.selectedTopics,
+                        onClick = {
+                            viewModel.toggleTopic(topic)
+                        },
+                        label = {
+                            Text(topic)
+                        },
+                        enabled = !uiState.isLoading
+                    )
+                }
             }
         }
 
