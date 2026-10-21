@@ -10,13 +10,6 @@ data class HealthResponse(
     val status: String
 )
 
-data class RecommendationRequest(
-    val user_id: Int,
-    val start_date: String,
-    val end_date: String,
-    val top_k: Int = 10
-)
-
 interface ApiService {
 
     @GET("health")
@@ -24,6 +17,7 @@ interface ApiService {
 
     @POST("recommend")
     suspend fun getRecommendations(
+        @Header("Authorization") authorization: String,
         @Body request: RecommendationRequest
     ): Response<RecommendationResponse>
 
