@@ -26,8 +26,12 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextOverflow
+import coil.compose.AsyncImage
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun HomeScreen(
@@ -84,6 +88,16 @@ fun HomeScreen(
             }
         }
 
+        OutlinedButton(
+            onClick = {
+                loadNews()
+            },
+            enabled = !uiState.isLoading,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Tải lại tin")
+        }
+
         if (uiState.isLoading) {
             Text("Đang tải tin...")
         } else if (uiState.errorMessage.isNotEmpty()) {
@@ -113,6 +127,19 @@ fun HomeScreen(
                         containerColor = Color.White
                     )
                 ) {
+                    val imageUrl = article.image_url
+
+                    if (!imageUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = article.title,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+
                     Column(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -138,6 +165,16 @@ fun HomeScreen(
                             maxLines = 3,
                             overflow = TextOverflow.Ellipsis
                         )
+
+                        val publishedAt = article.published_at
+
+                        if (!publishedAt.isNullOrBlank()) {
+                            Text(
+                                text = "Ngày đăng: ${publishedAt.take(10)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }

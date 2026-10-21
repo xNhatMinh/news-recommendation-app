@@ -5,6 +5,7 @@ data class RecommendationItem(
     val description: String,
     val category: String?,
     val url: String,
+    val image_url: String? = null,
     val published_at: String?,
     val embedding_score: Double,
     val keyword_score: Int,

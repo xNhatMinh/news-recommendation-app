@@ -73,7 +73,11 @@ fun AppNavHost(){
             )
         }
         composable(Routes.PREFERENCES) {
-            PreferencesScreen()
+            PreferencesScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
