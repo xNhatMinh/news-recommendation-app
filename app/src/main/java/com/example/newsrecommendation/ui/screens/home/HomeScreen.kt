@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextOverflow
 import coil.compose.AsyncImage
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Button
 import androidx.compose.ui.layout.ContentScale
 
 @Composable
@@ -107,6 +108,12 @@ fun HomeScreen(
             )
         } else if (uiState.articles.isEmpty()) {
             Text("Chưa có tin phù hợp trong khoảng thời gian này")
+        }
+
+        LaunchedEffect(uiState.needsLogin) {
+            if (uiState.needsLogin) {
+                onLogoutClick()
+            }
         }
 
         LazyColumn(

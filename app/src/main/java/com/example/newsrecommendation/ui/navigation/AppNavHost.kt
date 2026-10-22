@@ -76,6 +76,20 @@ fun AppNavHost(){
             PreferencesScreen(
                 onBackClick = {
                     navController.popBackStack()
+                },
+                onLoginClick = {
+                    coroutineScope.launch {
+                        withContext(Dispatchers.IO) {
+                            tokenManager.clearToken()
+                        }
+
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.HOME) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
                 }
             )
         }

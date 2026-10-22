@@ -30,10 +30,14 @@ class HomeViewModel(
         )
     }
 
-    private fun setError(message: String) {
+    private fun setError(
+        message: String,
+        needsLogin: Boolean = false
+    ) {
         uiState = uiState.copy(
             isLoading = false,
-            errorMessage = message
+            errorMessage = message,
+            needsLogin = needsLogin
         )
     }
 
@@ -48,7 +52,10 @@ class HomeViewModel(
                 }
 
                 if (token.isNullOrBlank()) {
-                    setError("Bạn cần đăng nhập lại")
+                    setError(
+                        message = "Bạn cần đăng nhập lại",
+                        needsLogin = true
+                    )
                     return@launch
                 }
 
@@ -67,10 +74,14 @@ class HomeViewModel(
                 if (response.isSuccessful && data != null) {
                     uiState = uiState.copy(
                         isLoading = false,
-                        articles = data.results
+                        articles = data.results,
+                        needsLogin = false
                     )
                 } else if (response.code() == 401) {
-                    setError("Phiên không còn hợp lệ, hãy đăng nhập lại")
+                    setError(
+                        "Phiên không còn hợp lệ, hãy đăng nhập lại",
+                        needsLogin = true
+                    )
                 } else {
                     setError("Không thể tải tin")
                 }

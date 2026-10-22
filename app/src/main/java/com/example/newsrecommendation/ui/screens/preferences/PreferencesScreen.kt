@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 @Composable
 fun PreferencesScreen(
     onBackClick: () -> Unit,
+    onLoginClick: () -> Unit,
     viewModel: PreferencesViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
@@ -36,6 +37,12 @@ fun PreferencesScreen(
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             onBackClick()
+        }
+    }
+
+    LaunchedEffect(uiState.needsLogin) {
+        if (uiState.needsLogin) {
+            onLoginClick()
         }
     }
 
