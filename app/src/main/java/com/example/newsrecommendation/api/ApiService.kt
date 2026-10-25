@@ -64,4 +64,10 @@ interface ApiService {
         @Header("Authorization") authorization: String,
         @Body request: SummaryRequest
     ): Response<SummaryResponse>
+
+    @GET("history")
+    suspend fun getHistory(
+        @Header("Authorization") authorization: String,
+        @Query("limit") limit: Int = 20
+    ): Response<HistoryResponse>
 }

@@ -22,6 +22,7 @@ import com.example.newsrecommendation.model.DeviceTokenRequest
 import kotlinx.coroutines.CancellationException
 import java.util.concurrent.TimeUnit
 import com.example.newsrecommendation.ui.screens.summary.SummaryScreen
+import com.example.newsrecommendation.ui.screens.history.HistoryScreen
 
 
 @Composable
@@ -85,6 +86,11 @@ fun AppNavHost(){
                     navController.navigate(Routes.SUMMARY) {
                         launchSingleTop = true
                     }
+                },
+                onHistoryClick = {
+                    navController.navigate(Routes.HISTORY) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -113,6 +119,29 @@ fun AppNavHost(){
         }
         composable(Routes.SUMMARY) {
             SummaryScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onLoginClick = {
+                    coroutineScope.launch {
+                        removeCurrentDevice(tokenManager)
+
+                        withContext(Dispatchers.IO) {
+                            tokenManager.clearToken()
+                        }
+
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.HOME) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                }
+            )
+        }
+        composable(Routes.HISTORY) {
+            HistoryScreen(
                 onBackClick = {
                     navController.popBackStack()
                 },

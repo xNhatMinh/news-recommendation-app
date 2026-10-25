@@ -38,6 +38,7 @@ fun HomeScreen(
     onLogoutClick: () -> Unit,
     onPreferencesClick: () -> Unit,
     onSummaryClick: () -> Unit,
+    onHistoryClick: () -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
@@ -87,6 +88,13 @@ fun HomeScreen(
             TextButton(onClick = onLogoutClick) {
                 Text("Đăng xuất")
             }
+        }
+
+        OutlinedButton(
+            onClick = onHistoryClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Lịch sử gợi ý")
         }
 
         OutlinedButton(
