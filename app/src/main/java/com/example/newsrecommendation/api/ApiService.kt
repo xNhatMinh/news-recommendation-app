@@ -58,4 +58,10 @@ interface ApiService {
         @Header("Authorization") authorization: String,
         @Body request: DeviceTokenRequest
     ): Response<DeviceTokenResponse>
+
+    @POST("summary")
+    suspend fun createSummary(
+        @Header("Authorization") authorization: String,
+        @Body request: SummaryRequest
+    ): Response<SummaryResponse>
 }

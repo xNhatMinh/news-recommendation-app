@@ -31,13 +31,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextOverflow
 import coil.compose.AsyncImage
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
 import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun HomeScreen(
     onLogoutClick: () -> Unit,
     onPreferencesClick: () -> Unit,
+    onSummaryClick: () -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
@@ -87,6 +87,13 @@ fun HomeScreen(
             TextButton(onClick = onLogoutClick) {
                 Text("Đăng xuất")
             }
+        }
+
+        OutlinedButton(
+            onClick = onSummaryClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Tổng hợp tin")
         }
 
         OutlinedButton(

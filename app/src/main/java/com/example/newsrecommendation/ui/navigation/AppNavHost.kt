@@ -21,6 +21,8 @@ import com.example.newsrecommendation.api.RetrofitClient
 import com.example.newsrecommendation.model.DeviceTokenRequest
 import kotlinx.coroutines.CancellationException
 import java.util.concurrent.TimeUnit
+import com.example.newsrecommendation.ui.screens.summary.SummaryScreen
+
 
 @Composable
 fun AppNavHost(){
@@ -79,10 +81,38 @@ fun AppNavHost(){
                 onPreferencesClick = {
                     navController.navigate(Routes.PREFERENCES)
                 },
+                onSummaryClick = {
+                    navController.navigate(Routes.SUMMARY) {
+                        launchSingleTop = true
+                    }
+                }
             )
         }
         composable(Routes.PREFERENCES) {
             PreferencesScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onLoginClick = {
+                    coroutineScope.launch {
+                        removeCurrentDevice(tokenManager)
+
+                        withContext(Dispatchers.IO) {
+                            tokenManager.clearToken()
+                        }
+
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.HOME) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                }
+            )
+        }
+        composable(Routes.SUMMARY) {
+            SummaryScreen(
                 onBackClick = {
                     navController.popBackStack()
                 },

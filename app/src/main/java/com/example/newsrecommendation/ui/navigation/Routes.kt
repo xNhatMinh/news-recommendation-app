@@ -7,4 +7,6 @@ object Routes{
     const val HOME = "home"
 
     const val PREFERENCES = "preferences"
+
+    const val SUMMARY = "summary"
 }
