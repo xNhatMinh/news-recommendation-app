@@ -14,6 +14,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.example.newsrecommendation.ui.screens.preferences.PreferencesScreen
+import android.util.Log
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.messaging.FirebaseMessaging
+import com.example.newsrecommendation.api.RetrofitClient
+import com.example.newsrecommendation.model.DeviceTokenRequest
+import kotlinx.coroutines.CancellationException
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun AppNavHost(){
@@ -55,6 +62,8 @@ fun AppNavHost(){
             HomeScreen(
                 onLogoutClick = {
                     coroutineScope.launch{
+                        removeCurrentDevice(tokenManager)
+
                         withContext(Dispatchers.IO) {
                             tokenManager.clearToken()
                         }
@@ -79,6 +88,8 @@ fun AppNavHost(){
                 },
                 onLoginClick = {
                     coroutineScope.launch {
+                        removeCurrentDevice(tokenManager)
+
                         withContext(Dispatchers.IO) {
                             tokenManager.clearToken()
                         }
@@ -93,5 +104,38 @@ fun AppNavHost(){
                 }
             )
         }
+    }
+}
+
+private suspend fun removeCurrentDevice(tokenManager: TokenManager) {
+    try {
+        val accessToken = withContext(Dispatchers.IO) {
+            tokenManager.getToken()
+        }
+
+        if (accessToken.isNullOrBlank()) return
+
+        val fcmToken = withContext(Dispatchers.IO) {
+            Tasks.await(
+                FirebaseMessaging.getInstance().token,
+                10,
+                TimeUnit.SECONDS
+            )
+        }
+
+        val response = RetrofitClient.apiService.removeDeviceToken(
+            authorization = "Bearer $accessToken",
+            request = DeviceTokenRequest(fcm_token = fcmToken)
+        )
+
+        if (response.isSuccessful) {
+            Log.d("FCM_DEVICE", "Đã gỡ liên kết thiết bị")
+        } else {
+            Log.w("FCM_DEVICE", "Gỡ thiết bị thất bại: ${response.code()}")
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.e("FCM_DEVICE", "Không gỡ được thiết bị", e)
     }
 }

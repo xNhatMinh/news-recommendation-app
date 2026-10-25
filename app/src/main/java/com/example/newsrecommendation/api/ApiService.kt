@@ -46,4 +46,16 @@ interface ApiService {
         @Header("Authorization") authorization: String,
         @Body request: PreferencesRequest
     ): Response<SavePreferencesResponse>
+
+    @POST("devices")
+    suspend fun saveDeviceToken(
+        @Header("Authorization") authorization: String,
+        @Body request: DeviceTokenRequest
+    ): Response<DeviceTokenResponse>
+
+    @POST("devices/remove")
+    suspend fun removeDeviceToken(
+        @Header("Authorization") authorization: String,
+        @Body request: DeviceTokenRequest
+    ): Response<DeviceTokenResponse>
 }

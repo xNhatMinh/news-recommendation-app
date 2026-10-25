@@ -3,12 +3,14 @@ package com.example.newsrecommendation.notification
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
+import android.app.PendingIntent
+import android.content.Intent
+import com.example.newsrecommendation.MainActivity
 
 class NewsMessagingService : FirebaseMessagingService() {
 
@@ -29,11 +31,25 @@ class NewsMessagingService : FirebaseMessagingService() {
             return
         }
 
+        val intent = Intent(this, MainActivity::class.java)
+
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(this, "news_alerts")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(message.notification?.title ?: "Tin mới")
             .setContentText(message.notification?.body.orEmpty())
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
             .build()
 
         val manager = getSystemService(NotificationManager::class.java)

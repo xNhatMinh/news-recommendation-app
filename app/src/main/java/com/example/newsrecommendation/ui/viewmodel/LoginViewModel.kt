@@ -13,7 +13,11 @@ import androidx.lifecycle.AndroidViewModel
 import com.example.newsrecommendation.storage.TokenManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
+import android.util.Log
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.messaging.FirebaseMessaging
+import com.example.newsrecommendation.model.DeviceTokenRequest
+import java.util.concurrent.TimeUnit
 class LoginViewModel (
     application: Application
 ) : AndroidViewModel(application) {
@@ -114,6 +118,8 @@ class LoginViewModel (
                             tokenManager.saveToken(token)
                         }
 
+                        registerDeviceToken(token)
+
                         setSuccess("Đăng nhập thành công")
                     }
                 } else {
@@ -150,17 +156,16 @@ class LoginViewModel (
                 val response = RetrofitClient.apiService
                     .getCurrentUser("Bearer $token")
 
-                when (response.code()) {
-                    200 -> setSuccess("Bạn đã đăng nhập")
-
-                    401 -> {
-                        withContext(Dispatchers.IO) {
-                            tokenManager.clearToken()
-                        }
-                        setLoading(false)
+                if (response.code() == 200) {
+                    registerDeviceToken(token)
+                    setSuccess("Bạn đã đăng nhập")
+                } else if (response.code() == 401) {
+                    withContext(Dispatchers.IO) {
+                        tokenManager.clearToken()
                     }
-
-                    else -> setError("Chưa kiểm tra được phiên đăng nhập")
+                    setLoading(false)
+                } else {
+                    setError("Chưa kiểm tra được phiên đăng nhập")
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -168,5 +173,32 @@ class LoginViewModel (
                 setError("Không thể kiểm tra phiên đăng nhập")
             }
         }
+    }
+}
+
+private suspend fun registerDeviceToken(accessToken: String) {
+    try {
+        val fcmToken = withContext(Dispatchers.IO) {
+            Tasks.await(
+                FirebaseMessaging.getInstance().token,
+                10,
+                TimeUnit.SECONDS
+            )
+        }
+
+        val response = RetrofitClient.apiService.saveDeviceToken(
+            authorization = "Bearer $accessToken",
+            request = DeviceTokenRequest(fcm_token = fcmToken)
+        )
+
+        if (response.isSuccessful) {
+            Log.d("FCM_DEVICE", "Đã đăng ký thiết bị")
+        } else {
+            Log.w("FCM_DEVICE", "Lưu token thất bại: ${response.code()}")
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.e("FCM_DEVICE", "Không đăng ký được thiết bị", e)
     }
 }
