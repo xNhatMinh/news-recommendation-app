@@ -10,7 +10,11 @@ import com.example.newsrecommendation.ui.viewmodel.PreferencesViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun PreferencesScreen(
@@ -49,24 +53,41 @@ fun PreferencesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FA))
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(24.dp)
+            .padding(16.dp)
     ) {
-        TextButton(onClick = onBackClick) {
-            Text("Quay lại")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Quay lại"
+                )
+            }
+
+            Text(
+                text = "Chủ đề yêu thích",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
         }
 
         Text(
-            text = "Chủ đề yêu thích",
-            style = MaterialTheme.typography.headlineMedium
+            text = "Chọn các chủ đề bạn muốn nhận tin gợi ý.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         for (rowTopics in topics.chunked(2)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 for (topic in rowTopics) {
@@ -78,8 +99,16 @@ fun PreferencesScreen(
                         label = {
                             Text(topic)
                         },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
                         enabled = !uiState.isLoading
                     )
+                }
+
+                if (rowTopics.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }

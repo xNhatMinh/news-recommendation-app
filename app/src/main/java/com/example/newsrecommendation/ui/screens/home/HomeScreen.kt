@@ -18,7 +18,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
@@ -30,18 +29,71 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextOverflow
 import coil.compose.AsyncImage
-import androidx.compose.foundation.layout.height
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material3.Button
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.FilterChip
 
 @Composable
 fun HomeScreen(
     onLogoutClick: () -> Unit,
     onPreferencesClick: () -> Unit,
     onSummaryClick: () -> Unit,
-    onHistoryClick: () -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
+
+    var showMenu by remember { mutableStateOf(false) }
+
+    var selectedFilter by remember {
+        mutableStateOf("Dành cho bạn")
+    }
+
+    val categories = uiState.articles
+        .mapNotNull { it.category }
+        .filter { it.isNotBlank() }
+        .distinct()
+
+    val filters = listOf("Dành cho bạn", "Mới nhất") + categories
+
+    val visibleArticles = when (selectedFilter) {
+        "Dành cho bạn" -> uiState.articles
+
+        "Mới nhất" -> uiState.articles.sortedByDescending {
+            it.published_at.orEmpty()
+        }
+
+        else -> uiState.articles.filter {
+            it.category == selectedFilter
+        }
+    }
+
+    LaunchedEffect(filters) {
+        if (selectedFilter !in filters) {
+            selectedFilter = "Dành cho bạn"
+        }
+    }
 
     val uriHandler = LocalUriHandler.current
 
@@ -67,51 +119,102 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FA))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            text = "Tin tức dành cho bạn",
-            style = MaterialTheme.typography.headlineSmall
-        )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = onPreferencesClick) {
-                Text("Chủ đề yêu thích")
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Mở menu"
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Đăng xuất") },
+                        onClick = {
+                            showMenu = false
+                            onLogoutClick()
+                        }
+                    )
+                }
             }
 
-            TextButton(onClick = onLogoutClick) {
-                Text("Đăng xuất")
+            Text(
+                text = "Bản tin",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            IconButton(onClick = onPreferencesClick) {
+                Icon(
+                    imageVector = Icons.Default.FavoriteBorder,
+                    contentDescription = "Chủ đề yêu thích"
+                )
+            }
+
+            IconButton(
+                onClick = { loadNews() },
+                enabled = !uiState.isLoading
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Tải lại tin"
+                )
             }
         }
 
-        OutlinedButton(
-            onClick = onHistoryClick,
-            modifier = Modifier.fillMaxWidth()
+        TabRow(
+            selectedTabIndex = 0,
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary
         ) {
-            Text("Lịch sử gợi ý")
+            Tab(
+                selected = true,
+                onClick = {
+                    selectedFilter = "Dành cho bạn"
+                },
+                text = {
+                    Text("Tin tức")
+                }
+            )
+
+            Tab(
+                selected = false,
+                onClick = onSummaryClick,
+                text = {
+                    Text("Tổng hợp")
+                }
+            )
         }
 
-        OutlinedButton(
-            onClick = onSummaryClick,
-            modifier = Modifier.fillMaxWidth()
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("Tổng hợp tin")
-        }
-
-        OutlinedButton(
-            onClick = {
-                loadNews()
-            },
-            enabled = !uiState.isLoading,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Tải lại tin")
+            items(filters) { filter ->
+                FilterChip(
+                    selected = selectedFilter == filter,
+                    onClick = {
+                        selectedFilter = filter
+                    },
+                    label = {
+                        Text(filter)
+                    },
+                    enabled = !uiState.isLoading
+                )
+            }
         }
 
         if (uiState.isLoading) {
@@ -121,8 +224,8 @@ fun HomeScreen(
                 text = uiState.errorMessage,
                 color = MaterialTheme.colorScheme.error
             )
-        } else if (uiState.articles.isEmpty()) {
-            Text("Chưa có tin phù hợp trong khoảng thời gian này")
+        } else if (visibleArticles.isEmpty()) {
+            Text("Chưa có tin trong mục này")
         }
 
         LaunchedEffect(uiState.needsLogin) {
@@ -134,68 +237,115 @@ fun HomeScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
+                .weight(1f),
+            contentPadding = PaddingValues(
+                top = 8.dp,
+                bottom = 16.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(uiState.articles) { article ->
+            itemsIndexed(visibleArticles) { index, article ->
+                val imageUrl = article.image_url
+                val featured = index == 0 && !imageUrl.isNullOrBlank()
+                val category = article.category.orEmpty().ifBlank { "Tin tức" }
+                val date = article.published_at?.take(10).orEmpty()
+
                 Card(
                     onClick = {
                         uriHandler.openUri(article.url)
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
                 ) {
-                    val imageUrl = article.image_url
-
                     if (!imageUrl.isNullOrBlank()) {
-                        AsyncImage(
-                            model = imageUrl,
-                            contentDescription = article.title,
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(180.dp),
-                            contentScale = ContentScale.Crop
-                        )
+                                .height(if (featured) 210.dp else 180.dp)
+                        ) {
+                            AsyncImage(
+                                model = imageUrl,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+
+                            if (featured) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.verticalGradient(
+                                                colors = listOf(
+                                                    Color.Transparent,
+                                                    Color.Black.copy(alpha = 0.85f)
+                                                )
+                                            )
+                                        )
+                                )
+
+                                Column(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = "TIN NỔI BẬT",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White
+                                    )
+
+                                    Text(
+                                        text = article.title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        maxLines = 3,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+
+                                    Text(
+                                        text = "$category · $date",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.White.copy(alpha = 0.85f)
+                                    )
+                                }
+                            }
+                        }
                     }
 
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        val category = article.category
-
-                        if (!category.isNullOrBlank()) {
+                    if (!featured) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(7.dp)
+                        ) {
                             Text(
-                                text = category,
-                                color = Color(0xFF2563EB),
-                                style = MaterialTheme.typography.labelMedium
+                                text = "$category · $date",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
                             )
-                        }
 
-                        Text(
-                            text = article.title,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-
-                        Text(
-                            text = article.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis
-                        )
-
-                        val publishedAt = article.published_at
-
-                        if (!publishedAt.isNullOrBlank()) {
                             Text(
-                                text = "Ngày đăng: ${publishedAt.take(10)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = article.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis
                             )
+
+                            if (article.description.isNotBlank()) {
+                                Text(
+                                    text = article.description,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
                 }

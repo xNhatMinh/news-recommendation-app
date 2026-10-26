@@ -14,7 +14,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.newsrecommendation.ui.viewmodel.RegisterViewModel
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +22,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.size
 
 @Composable
 fun RegisterScreen(
@@ -39,7 +39,7 @@ fun RegisterScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FA))
+            .background(MaterialTheme.colorScheme.background)
             .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
@@ -127,8 +127,8 @@ fun RegisterScreen(
             },
             enabled = !uiState.isLoading,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2563EB),
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
@@ -136,7 +136,11 @@ fun RegisterScreen(
                 .height(52.dp)
         ) {
             if(uiState.isLoading){
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
             } else {
                 Text("Đăng ký")
             }
@@ -156,7 +160,7 @@ fun RegisterScreen(
         if (uiState.successMessage.isNotEmpty()) {
             Text(
                 text = uiState.successMessage,
-                color = Color(0xFF2E7D32)
+                color = MaterialTheme.colorScheme.primary
             )
         }
 

@@ -43,6 +43,7 @@ android {
 
 dependencies {
 
+    implementation("androidx.compose.material:material-icons-core")
     implementation(platform("com.google.firebase:firebase-bom:35.0.2"))
     implementation("com.google.firebase:firebase-messaging")
     implementation("io.coil-kt:coil-compose:2.7.0")

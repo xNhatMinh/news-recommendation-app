@@ -42,7 +42,7 @@ fun LoginScreen(
     Column (
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FA))
+            .background(MaterialTheme.colorScheme.background)
             .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
@@ -50,7 +50,7 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Đăng Nhập",
+            text = "Newsora",
             style = MaterialTheme.typography.headlineMedium
         )
 
@@ -100,8 +100,8 @@ fun LoginScreen(
             },
             enabled = !uiState.isLoading,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2563EB),
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
@@ -109,7 +109,11 @@ fun LoginScreen(
                 .height(52.dp)
         ) {
             if (uiState.isLoading) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
             } else {
                 Text("Đăng nhập")
             }
@@ -125,7 +129,7 @@ fun LoginScreen(
         if (uiState.successMessage.isNotEmpty()) {
             Text(
                 text = uiState.successMessage,
-                color = Color(0xFF2E7D32)
+                color = MaterialTheme.colorScheme.primary
             )
         }
 
