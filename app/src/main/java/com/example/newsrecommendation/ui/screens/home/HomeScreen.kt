@@ -14,14 +14,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.newsrecommendation.ui.viewmodel.HomeViewModel
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,7 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextOverflow
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.material3.Button
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -60,60 +56,41 @@ fun HomeScreen(
     onLogoutClick: () -> Unit,
     onPreferencesClick: () -> Unit,
     onSummaryClick: () -> Unit,
+    onArticleClick: (String) -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
 
     var showMenu by remember { mutableStateOf(false) }
 
-    var selectedFilter by remember {
-        mutableStateOf("Dành cho bạn")
+    val selectedFilter = uiState.selectedFilter
+    val filters = listOf("Mới nhất", "Dành cho bạn") + uiState.categories
+    val visibleArticles = uiState.articles
+    val listState = rememberLazyListState()
+
+    fun loadNews() {
+        viewModel.loadNews()
     }
 
-    val categories = uiState.articles
-        .mapNotNull { it.category }
-        .filter { it.isNotBlank() }
-        .distinct()
+    fun openPreferences() {
+        viewModel.onPreferencesOpened()
+        onPreferencesClick()
+    }
 
-    val filters = listOf("Dành cho bạn", "Mới nhất") + categories
-
-    val visibleArticles = when (selectedFilter) {
-        "Dành cho bạn" -> uiState.articles
-
-        "Mới nhất" -> uiState.articles.sortedByDescending {
-            it.published_at.orEmpty()
-        }
-
-        else -> uiState.articles.filter {
-            it.category == selectedFilter
-        }
+    LaunchedEffect(Unit) {
+        viewModel.loadInitialNews()
     }
 
     LaunchedEffect(filters) {
         if (selectedFilter !in filters) {
-            selectedFilter = "Dành cho bạn"
+            viewModel.loadNews("Mới nhất")
         }
     }
 
-    val uriHandler = LocalUriHandler.current
-
-    fun loadNews() {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-        val calendar = Calendar.getInstance()
-
-        val endDate = dateFormat.format(calendar.time)
-
-        calendar.add(Calendar.DAY_OF_YEAR, -30)
-        val startDate = dateFormat.format(calendar.time)
-
-        viewModel.loadRecommendations(
-            startDate = startDate,
-            endDate = endDate
-        )
-    }
-
-    LaunchedEffect(Unit) {
-        loadNews()
+    LaunchedEffect(selectedFilter, uiState.isLoading) {
+        if (uiState.isLoading) {
+            listState.scrollToItem(0)
+        }
     }
 
     Column(
@@ -157,7 +134,7 @@ fun HomeScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            IconButton(onClick = onPreferencesClick) {
+            IconButton(onClick = { openPreferences() }) {
                 Icon(
                     imageVector = Icons.Default.FavoriteBorder,
                     contentDescription = "Chủ đề yêu thích"
@@ -183,7 +160,7 @@ fun HomeScreen(
             Tab(
                 selected = true,
                 onClick = {
-                    selectedFilter = "Dành cho bạn"
+                    viewModel.loadNews("Mới nhất")
                 },
                 text = {
                     Text("Tin tức")
@@ -207,12 +184,13 @@ fun HomeScreen(
                 FilterChip(
                     selected = selectedFilter == filter,
                     onClick = {
-                        selectedFilter = filter
+                        if (filter != selectedFilter) {
+                            viewModel.loadNews(filter)
+                        }
                     },
                     label = {
                         Text(filter)
-                    },
-                    enabled = !uiState.isLoading
+                    }
                 )
             }
         }
@@ -225,7 +203,14 @@ fun HomeScreen(
                 color = MaterialTheme.colorScheme.error
             )
         } else if (visibleArticles.isEmpty()) {
-            Text("Chưa có tin trong mục này")
+            if (selectedFilter == "Dành cho bạn") {
+                Text("Chưa có tin gợi ý phù hợp. Bạn có thể chọn lại chủ đề yêu thích.")
+                TextButton(onClick = { openPreferences() }) {
+                    Text("Chọn chủ đề yêu thích")
+                }
+            } else {
+                Text("Chưa có tin trong mục này")
+            }
         }
 
         LaunchedEffect(uiState.needsLogin) {
@@ -235,6 +220,7 @@ fun HomeScreen(
         }
 
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
@@ -252,7 +238,7 @@ fun HomeScreen(
 
                 Card(
                     onClick = {
-                        uriHandler.openUri(article.url)
+                        onArticleClick(article.url)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
@@ -347,6 +333,20 @@ fun HomeScreen(
                                 )
                             }
                         }
+                    }
+                }
+            }
+
+            if (uiState.hasMore) {
+                item {
+                    OutlinedButton(
+                        onClick = { viewModel.loadMore() },
+                        enabled = !uiState.isLoadingMore,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            if (uiState.isLoadingMore) "Đang tải thêm..." else "Xem thêm tin"
+                        )
                     }
                 }
             }

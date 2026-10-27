@@ -1,12 +1,12 @@
 package com.example.newsrecommendation.ui.screens.summary
 
+import com.example.newsrecommendation.model.NewsTopics
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.newsrecommendation.ui.viewmodel.SummaryViewModel
@@ -25,20 +25,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 fun SummaryScreen(
     onBackClick: () -> Unit,
     onLoginClick: () -> Unit,
+    onArticleClick: (String) -> Unit,
     viewModel: SummaryViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
-    val uriHandler = LocalUriHandler.current
 
-    val topics = listOf(
-        "Thời sự",
-        "Thế giới",
-        "Kinh doanh",
-        "Khoa học",
-        "Thể thao",
-        "Giải trí",
-        "Sức khỏe"
-    )
+    val topics = NewsTopics.all
 
     LaunchedEffect(uiState.needsLogin) {
         if (uiState.needsLogin) {
@@ -176,7 +168,7 @@ fun SummaryScreen(
             for (source in uiState.sources) {
                 OutlinedCard(
                     onClick = {
-                        uriHandler.openUri(source.url)
+                        onArticleClick(source.url)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -190,7 +182,7 @@ fun SummaryScreen(
                         )
 
                         Text(
-                            text = "Đọc bài gốc →",
+                            text = "Đọc bài báo →",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )

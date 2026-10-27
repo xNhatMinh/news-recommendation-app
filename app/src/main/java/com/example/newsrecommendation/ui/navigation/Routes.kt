@@ -9,4 +9,6 @@ object Routes{
     const val PREFERENCES = "preferences"
 
     const val SUMMARY = "summary"
+
+    const val ARTICLE_DETAIL = "article_detail"
 }

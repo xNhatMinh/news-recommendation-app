@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.example.newsrecommendation.model.PreferencesRequest
+import com.example.newsrecommendation.model.NewsTopics
 
 class PreferencesViewModel(
     application: Application
@@ -23,15 +24,7 @@ class PreferencesViewModel(
     var uiState by mutableStateOf(PreferencesUiState())
         private set
 
-    val topics = listOf(
-        "Thời sự",
-        "Thế giới",
-        "Kinh doanh",
-        "Khoa học",
-        "Thể thao",
-        "Giải trí",
-        "Sức khỏe"
-    )
+    val topics = NewsTopics.all
 
     fun toggleTopic(topic: String) {
         if(uiState.isLoading) return
@@ -50,6 +43,35 @@ class PreferencesViewModel(
             isSaved =  false
         )
 
+    }
+
+    fun clearTopics() {
+        if (uiState.isLoading) return
+        uiState = uiState.copy(
+            selectedTopics = uiState.selectedTopics.filterNot { it in topics },
+            errorMessage = "",
+            isSaved = false
+        )
+    }
+
+    fun addKeyword(text: String): Boolean {
+        if (uiState.isLoading) return false
+        val keyword = text.trim().replace(Regex("\\s+"), " ")
+        if (keyword.isBlank()) return false
+        if (keyword.length > 200) {
+            uiState = uiState.copy(errorMessage = "Từ khóa tối đa 200 ký tự")
+            return false
+        }
+
+        // Nhập tên chủ đề có sẵn thì chọn luôn chủ đề đó.
+        val value = topics.firstOrNull { it.equals(keyword, ignoreCase = true) } ?: keyword
+        val alreadySelected = uiState.selectedTopics.any { it.equals(value, ignoreCase = true) }
+        uiState = uiState.copy(
+            selectedTopics = if (alreadySelected) uiState.selectedTopics else uiState.selectedTopics + value,
+            errorMessage = "",
+            isSaved = false
+        )
+        return true
     }
 
     private fun setLoading(isLoading: Boolean) {
@@ -134,7 +156,10 @@ class PreferencesViewModel(
                 }
 
                 if (token.isNullOrBlank()) {
-                    setError("Bạn cần đăng nhập lại")
+                    setError(
+                        message = "Bạn cần đăng nhập lại",
+                        needsLogin = true
+                    )
                     return@launch
                 }
 
@@ -156,7 +181,10 @@ class PreferencesViewModel(
                     }
 
                     response.code() == 401 -> {
-                        setError("Phiên không còn hợp lệ, hãy đăng nhập lại")
+                        setError(
+                            message = "Phiên không còn hợp lệ, hãy đăng nhập lại",
+                            needsLogin = true
+                        )
                     }
 
                     else -> {

@@ -7,8 +7,8 @@ data class RecommendationItem(
     val url: String,
     val image_url: String? = null,
     val published_at: String?,
-    val embedding_score: Double,
-    val keyword_score: Int,
-    val hybrid_score: Double,
-    val personalized_score: Double
+    val embedding_score: Double = 0.0,
+    val keyword_score: Int = 0,
+    val hybrid_score: Double = 0.0,
+    val personalized_score: Double = 0.0
 )

@@ -22,7 +22,10 @@ import com.example.newsrecommendation.model.DeviceTokenRequest
 import kotlinx.coroutines.CancellationException
 import java.util.concurrent.TimeUnit
 import com.example.newsrecommendation.ui.screens.summary.SummaryScreen
-
+import android.net.Uri
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.example.newsrecommendation.ui.screens.article.ArticleDetailScreen
 
 @Composable
 fun AppNavHost(){
@@ -34,6 +37,14 @@ fun AppNavHost(){
     }
 
     val coroutineScope = rememberCoroutineScope()
+
+    fun openArticle(url: String) {
+        navController.navigate(
+            "${Routes.ARTICLE_DETAIL}?url=${Uri.encode(url)}"
+        ) {
+            launchSingleTop = true
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -85,7 +96,10 @@ fun AppNavHost(){
                     navController.navigate(Routes.SUMMARY) {
                         launchSingleTop = true
                     }
-                }
+                },
+                onArticleClick = { url ->
+                    openArticle(url)
+                },
             )
         }
         composable(Routes.PREFERENCES) {
@@ -113,6 +127,44 @@ fun AppNavHost(){
         }
         composable(Routes.SUMMARY) {
             SummaryScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onLoginClick = {
+                    coroutineScope.launch {
+                        removeCurrentDevice(tokenManager)
+
+                        withContext(Dispatchers.IO) {
+                            tokenManager.clearToken()
+                        }
+
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.HOME) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                },
+                onArticleClick = { url ->
+                    openArticle(url)
+                },
+            )
+        }
+        composable(
+            route = "${Routes.ARTICLE_DETAIL}?url={url}",
+            arguments = listOf(
+                navArgument("url") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val url = backStackEntry.arguments
+                ?.getString("url")
+                .orEmpty()
+
+            ArticleDetailScreen(
+                url = url,
                 onBackClick = {
                     navController.popBackStack()
                 },

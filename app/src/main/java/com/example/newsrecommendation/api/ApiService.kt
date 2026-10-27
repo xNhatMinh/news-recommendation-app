@@ -3,6 +3,7 @@ import retrofit2.http.*
 import retrofit2.Response
 import com.example.newsrecommendation.model.*
 import com.example.newsrecommendation.model.UserResponse
+import com.example.newsrecommendation.model.ArticleDetail
 import retrofit2.http.Header
 
 
@@ -64,4 +65,18 @@ interface ApiService {
         @Header("Authorization") authorization: String,
         @Body request: SummaryRequest
     ): Response<SummaryResponse>
+
+    @GET("articles/latest")
+    suspend fun getLatestArticles(
+        @Header("Authorization") authorization: String,
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0,
+        @Query("category") category: String? = null
+    ): Response<LatestArticlesResponse>
+
+    @GET("articles/detail")
+    suspend fun getArticleDetail(
+        @Header("Authorization") authorization: String,
+        @Query("url") url: String
+    ): Response<ArticleDetail>
 }
