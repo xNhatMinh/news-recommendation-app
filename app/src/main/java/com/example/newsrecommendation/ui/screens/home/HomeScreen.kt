@@ -35,7 +35,13 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,6 +62,7 @@ fun HomeScreen(
     onLogoutClick: () -> Unit,
     onPreferencesClick: () -> Unit,
     onSummaryClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
     onArticleClick: (String) -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
@@ -68,10 +75,6 @@ fun HomeScreen(
     val visibleArticles = uiState.articles
     val listState = rememberLazyListState()
 
-    fun loadNews() {
-        viewModel.loadNews()
-    }
-
     fun openPreferences() {
         viewModel.onPreferencesOpened()
         onPreferencesClick()
@@ -79,6 +82,16 @@ fun HomeScreen(
 
     LaunchedEffect(Unit) {
         viewModel.loadInitialNews()
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                viewModel.loadNotificationCount()
+                delay(30_000)
+            }
+        }
     }
 
     LaunchedEffect(filters) {
@@ -141,14 +154,14 @@ fun HomeScreen(
                 )
             }
 
-            IconButton(
-                onClick = { loadNews() },
-                enabled = !uiState.isLoading
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = "Tải lại tin"
-                )
+            IconButton(onClick = onNotificationsClick) {
+                BadgedBox(badge = {
+                    if (uiState.unreadNotificationCount > 0) {
+                        Badge { Text(if (uiState.unreadNotificationCount > 99) "99+" else uiState.unreadNotificationCount.toString()) }
+                    }
+                }) {
+                    Icon(Icons.Default.Notifications, contentDescription = "Thông báo")
+                }
             }
         }
 

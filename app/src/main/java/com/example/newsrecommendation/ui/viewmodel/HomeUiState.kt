@@ -4,6 +4,7 @@ import com.example.newsrecommendation.model.RecommendationItem
 
 data class HomeUiState(
     val selectedFilter: String = "Mới nhất",
+    val unreadNotificationCount: Int = 0,
     val categories: List<String> = emptyList(),
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,

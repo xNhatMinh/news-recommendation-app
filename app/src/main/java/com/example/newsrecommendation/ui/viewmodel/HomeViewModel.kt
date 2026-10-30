@@ -25,11 +25,37 @@ class HomeViewModel(
     private val tokenManager = TokenManager(application)
     private val pageSize = 20
     private var nextOffset = 0
+    private var checkingNotificationCount = false
     private var hasLoaded = false
     private var loadJob: Job? = null
 
     var uiState by mutableStateOf(HomeUiState())
         private set
+
+    fun loadNotificationCount() {
+        if (checkingNotificationCount) return
+        checkingNotificationCount = true
+        viewModelScope.launch {
+            try {
+                val token = withContext(Dispatchers.IO) { tokenManager.getToken() }
+                if (token.isNullOrBlank()) return@launch
+                val response = RetrofitClient.apiService.getNotificationCounts("Bearer $token")
+                if (response.isSuccessful) {
+                    response.body()?.let { data ->
+                        uiState = uiState.copy(unreadNotificationCount = data.unread_count)
+                    }
+                } else if (response.code() == 401) {
+                    uiState = uiState.copy(needsLogin = true)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Chuông sẽ kiểm tra lại khi màn hình đang mở.
+            } finally {
+                checkingNotificationCount = false
+            }
+        }
+    }
 
     fun loadInitialNews() {
         if (!hasLoaded && !uiState.isLoading && !uiState.isLoadingMore) {

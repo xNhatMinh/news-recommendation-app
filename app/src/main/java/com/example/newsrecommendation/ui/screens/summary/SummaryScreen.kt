@@ -17,10 +17,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SummaryScreen(
     onBackClick: () -> Unit,
@@ -66,22 +68,28 @@ fun SummaryScreen(
 
         Text("Chọn chủ đề để tổng hợp tin trong 30 ngày gần đây")
 
-        for (rowTopics in topics.chunked(2)) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                for (topic in rowTopics) {
-                    FilterChip(
-                        selected = topic == uiState.selectedTopic,
-                        onClick = {
-                            viewModel.selectTopic(topic)
-                        },
-                        label = {
-                            Text(topic)
-                        },
-                        enabled = !uiState.isLoading
-                    )
-                }
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            for (topic in topics) {
+                val selected = topic == uiState.selectedTopic
+                FilterChip(
+                    selected = selected,
+                    onClick = { viewModel.selectTopic(topic) },
+                    label = { Text(topic, fontSize = 13.sp) },
+                    leadingIcon = if (selected) {
+                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    } else null,
+                    shape = RoundedCornerShape(8.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.primary
+                    ),
+                    enabled = !uiState.isLoading
+                )
             }
         }
 

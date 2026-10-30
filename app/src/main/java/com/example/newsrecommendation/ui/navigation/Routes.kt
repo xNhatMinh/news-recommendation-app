@@ -5,6 +5,7 @@ object Routes{
     const val REGISTER = "register"
 
     const val HOME = "home"
+    const val NOTIFICATIONS = "notifications"
 
     const val PREFERENCES = "preferences"
 

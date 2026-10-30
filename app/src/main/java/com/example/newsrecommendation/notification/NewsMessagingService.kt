@@ -32,6 +32,7 @@ class NewsMessagingService : FirebaseMessagingService() {
         }
 
         val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra("screen", message.data["screen"] ?: "notifications")
 
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
                 Intent.FLAG_ACTIVITY_SINGLE_TOP

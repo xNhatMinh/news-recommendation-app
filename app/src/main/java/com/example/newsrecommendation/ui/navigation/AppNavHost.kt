@@ -1,6 +1,10 @@
 package com.example.newsrecommendation.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.newsrecommendation.ui.screens.notifications.NotificationsScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -28,7 +32,7 @@ import androidx.navigation.navArgument
 import com.example.newsrecommendation.ui.screens.article.ArticleDetailScreen
 
 @Composable
-fun AppNavHost(){
+fun AppNavHost(openNotifications: Boolean = false, onNotificationHandled: () -> Unit = {}){
     val navController = rememberNavController()
     val context = LocalContext.current
 
@@ -43,6 +47,15 @@ fun AppNavHost(){
             "${Routes.ARTICLE_DETAIL}?url=${Uri.encode(url)}"
         ) {
             launchSingleTop = true
+        }
+    }
+
+    val currentEntry by navController.currentBackStackEntryAsState()
+    LaunchedEffect(openNotifications, currentEntry) {
+        val route = currentEntry?.destination?.route
+        if (openNotifications && route != null && route != Routes.LOGIN && route != Routes.REGISTER) {
+            navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true }
+            onNotificationHandled()
         }
     }
 
@@ -97,9 +110,28 @@ fun AppNavHost(){
                         launchSingleTop = true
                     }
                 },
+                onNotificationsClick = {
+                    navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true }
+                },
                 onArticleClick = { url ->
                     openArticle(url)
                 },
+            )
+        }
+        composable(Routes.NOTIFICATIONS) {
+            NotificationsScreen(
+                onBackClick = { navController.popBackStack() },
+                onArticleClick = { url -> openArticle(url) },
+                onLoginClick = {
+                    coroutineScope.launch {
+                        removeCurrentDevice(tokenManager)
+                        withContext(Dispatchers.IO) { tokenManager.clearToken() }
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.HOME) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                }
             )
         }
         composable(Routes.PREFERENCES) {

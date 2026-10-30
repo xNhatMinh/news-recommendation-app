@@ -79,4 +79,27 @@ interface ApiService {
         @Header("Authorization") authorization: String,
         @Query("url") url: String
     ): Response<ArticleDetail>
+    @GET("notifications")
+    suspend fun getNotifications(
+        @Header("Authorization") authorization: String,
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0,
+        @Query("unread_only") unreadOnly: Boolean = false
+    ): Response<NotificationsResponse>
+
+    @GET("notifications/unread-count")
+    suspend fun getNotificationCounts(
+        @Header("Authorization") authorization: String
+    ): Response<NotificationCounts>
+
+    @PATCH("notifications/{id}/read")
+    suspend fun readNotification(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: Long
+    ): Response<NotificationCounts>
+
+    @PATCH("notifications/read-all")
+    suspend fun readAllNotifications(
+        @Header("Authorization") authorization: String
+    ): Response<NotificationCounts>
 }

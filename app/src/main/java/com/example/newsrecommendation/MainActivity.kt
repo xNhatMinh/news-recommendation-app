@@ -1,6 +1,8 @@
 package com.example.newsrecommendation
 
 import android.os.Bundle
+import android.content.Intent
+import androidx.compose.runtime.mutableStateOf
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.example.newsrecommendation.ui.navigation.AppNavHost
@@ -20,6 +22,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 
 class MainActivity : ComponentActivity() {
+    private val openNotifications = mutableStateOf(false)
+
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { }
@@ -39,6 +43,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        openNotifications.value = intent?.getStringExtra("screen") == "notifications"
         createNewsChannel()
         if (Build.VERSION.SDK_INT >= 33) {
             val permission = Manifest.permission.POST_NOTIFICATIONS
@@ -67,10 +72,22 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .safeDrawingPadding()
                 ) {
-                    AppNavHost()
+                    AppNavHost(
+                        openNotifications = openNotifications.value,
+                        onNotificationHandled = {
+                            openNotifications.value = false
+                            intent?.removeExtra("screen")
+                        }
+                    )
                 }
             }
         }
     }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        openNotifications.value = intent.getStringExtra("screen") == "notifications"
+    }
+
 }
 
