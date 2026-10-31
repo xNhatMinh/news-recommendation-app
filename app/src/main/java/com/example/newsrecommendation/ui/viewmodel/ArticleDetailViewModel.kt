@@ -11,6 +11,7 @@ import com.example.newsrecommendation.model.BookmarkRequest
 import com.example.newsrecommendation.storage.TokenManager
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -19,18 +20,13 @@ class ArticleDetailViewModel(
 ) : AndroidViewModel(application) {
 
     private val tokenManager = TokenManager(application)
+    private var bookmarkJob: Job? = null
 
     var uiState by mutableStateOf(ArticleDetailUiState())
         private set
 
-    private fun setError(
-        message: String,
-        needsLogin: Boolean = false
-    ) {
-        uiState = ArticleDetailUiState(
-            errorMessage = message,
-            needsLogin = needsLogin
-        )
+    private fun setError(message: String) {
+        uiState = ArticleDetailUiState(errorMessage = message)
     }
 
     fun loadArticle(url: String) {
@@ -40,22 +36,7 @@ class ArticleDetailViewModel(
 
         viewModelScope.launch {
             try {
-                val token = withContext(Dispatchers.IO) {
-                    tokenManager.getToken()
-                }
-
-                if (token.isNullOrBlank()) {
-                    setError(
-                        message = "Bạn cần đăng nhập lại",
-                        needsLogin = true
-                    )
-                    return@launch
-                }
-
-                val response = RetrofitClient.apiService.getArticleDetail(
-                    authorization = "Bearer $token",
-                    url = url
-                )
+                val response = RetrofitClient.apiService.getArticleDetail(url = url)
 
                 val article = response.body()
 
@@ -63,14 +44,6 @@ class ArticleDetailViewModel(
                     response.isSuccessful && article != null -> {
                         uiState = ArticleDetailUiState(
                             article = article
-                        )
-                        loadBookmarkStatus()
-                    }
-
-                    response.code() == 401 -> {
-                        setError(
-                            message = "Phiên đăng nhập đã hết hạn",
-                            needsLogin = true
                         )
                     }
 
@@ -88,6 +61,14 @@ class ArticleDetailViewModel(
                 setError("Không thể kết nối, vui lòng thử lại")
             }
         }
+    }
+
+    fun clearBookmarkState() {
+        bookmarkJob?.cancel()
+        uiState = uiState.copy(
+            isSaved = null, isCheckingBookmark = false, isUpdatingBookmark = false,
+            bookmarkError = "", needsLogin = false, resumeBookmark = false
+        )
     }
 
     fun loadBookmarkStatus() {
@@ -108,11 +89,11 @@ class ArticleDetailViewModel(
             isUpdatingBookmark = change,
             bookmarkError = ""
         )
-        viewModelScope.launch {
+        bookmarkJob = viewModelScope.launch {
             try {
                 val token = withContext(Dispatchers.IO) { tokenManager.getToken() }
                 if (token.isNullOrBlank()) {
-                    uiState = uiState.copy(needsLogin = true)
+                    uiState = uiState.copy(needsLogin = true, resumeBookmark = change)
                     return@launch
                 }
                 val api = RetrofitClient.apiService
@@ -125,7 +106,7 @@ class ArticleDetailViewModel(
                 if (response.isSuccessful && data != null) {
                     uiState = uiState.copy(isSaved = data.is_saved)
                 } else if (response.code() == 401) {
-                    uiState = uiState.copy(needsLogin = true)
+                    uiState = uiState.copy(needsLogin = true, resumeBookmark = change)
                 } else {
                     uiState = uiState.copy(bookmarkError = "Không thể cập nhật trạng thái lưu bài. Hãy thử lại.")
                 }

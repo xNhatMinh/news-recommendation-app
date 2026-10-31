@@ -105,7 +105,9 @@ class RegisterViewModel : ViewModel() {
                 } else {
                     val message = when(response.code()){
                         409 -> "Email đã được đăng ký"
-                        422 -> "Thông tin đăng ký không hợp lệ"
+                        422 -> "Email hoặc mật khẩu chưa hợp lệ"
+                        429 -> "Bạn thử đăng ký quá nhiều lần, vui lòng thử lại sau"
+                        503 -> "Dịch vụ đăng ký tạm thời chưa khả dụng, vui lòng thử lại"
                         else -> "Đăng ký thất bại, vui lòng thử lại"
                     }
                     setError(message)

@@ -8,7 +8,13 @@ import com.example.newsrecommendation.api.RetrofitClient
 import com.example.newsrecommendation.model.LoginRequest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import android.app.Activity
 import android.app.Application
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
+import com.example.newsrecommendation.auth.googleIdToken
+import com.example.newsrecommendation.model.GoogleLoginRequest
 import androidx.lifecycle.AndroidViewModel
 import com.example.newsrecommendation.storage.TokenManager
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +72,7 @@ class LoginViewModel (
     fun setLoading(isLoading: Boolean) {
         uiState = uiState.copy(
             isLoading = isLoading,
+            isGoogleLoading = false,
             errorMessage = "",
             successMessage = ""
         )
@@ -74,6 +81,7 @@ class LoginViewModel (
     fun setSuccess(message: String) {
         uiState = uiState.copy(
             isLoading = false,
+            isGoogleLoading = false,
             successMessage = message,
             errorMessage = "",
             isLoggedIn = true
@@ -83,6 +91,7 @@ class LoginViewModel (
     fun setError(message: String) {
         uiState = uiState.copy(
             isLoading = false,
+            isGoogleLoading = false,
             successMessage = "",
             errorMessage = message,
             isLoggedIn = false
@@ -118,14 +127,16 @@ class LoginViewModel (
                             tokenManager.saveToken(token)
                         }
 
-                        registerDeviceToken(token)
-
                         setSuccess("Đăng nhập thành công")
                     }
                 } else {
                     val message = when (response.code()) {
                         401 -> "Email hoặc mật khẩu không đúng"
+                        403 -> "Tài khoản đã bị vô hiệu hóa"
+                        409 -> "Email đã được liên kết với một tài khoản khác."
                         422 -> "Thông tin đăng nhập không hợp lệ"
+                        429 -> "Bạn thử đăng nhập quá nhiều lần, vui lòng thử lại sau"
+                        503 -> "Dịch vụ đăng nhập tạm thời chưa khả dụng, vui lòng thử lại"
                         else -> "Đăng nhập thất bại, vui lòng thử lại"
                     }
                     setError(message)
@@ -138,45 +149,45 @@ class LoginViewModel (
         }
     }
 
-    fun checkSavedLogin() {
+
+    fun loginWithGoogle(activity: Activity) {
         if (uiState.isLoading) return
         setLoading(true)
-
+        uiState = uiState.copy(isGoogleLoading = true)
         viewModelScope.launch {
             try {
-                val token = withContext(Dispatchers.IO) {
-                    tokenManager.getToken()
-                }
-
-                if (token.isNullOrBlank()) {
-                    setLoading(false)
-                    return@launch
-                }
-
-                val response = RetrofitClient.apiService
-                    .getCurrentUser("Bearer $token")
-
-                if (response.code() == 200) {
-                    registerDeviceToken(token)
-                    setSuccess("Bạn đã đăng nhập")
-                } else if (response.code() == 401) {
-                    withContext(Dispatchers.IO) {
-                        tokenManager.clearToken()
-                    }
-                    setLoading(false)
+                val googleToken = googleIdToken(activity)
+                val response = RetrofitClient.apiService.loginGoogle(GoogleLoginRequest(googleToken))
+                val token = response.body()?.access_token
+                if (response.isSuccessful && !token.isNullOrBlank()) {
+                    withContext(Dispatchers.IO) { tokenManager.saveToken(token) }
+                    setSuccess("Đăng nhập thành công")
                 } else {
-                    setError("Chưa kiểm tra được phiên đăng nhập")
+                    setError(when (response.code()) {
+                        401 -> "Không xác thực được tài khoản Google, vui lòng thử lại"
+                        403 -> "Tài khoản đã bị vô hiệu hóa"
+                        409 -> "Email này đã có tài khoản. Hãy đăng nhập bằng email/mật khẩu trước."
+                        503 -> "Dịch vụ đăng nhập tạm thời chưa khả dụng, vui lòng thử lại"
+                        else -> "Không thể đăng nhập Google, vui lòng thử lại"
+                    })
                 }
+            } catch (_: GetCredentialCancellationException) {
+                setLoading(false)
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
-                setError("Không thể kiểm tra phiên đăng nhập")
+            } catch (_: NoCredentialException) {
+                setError("Chưa tìm thấy tài khoản Google khả dụng trên thiết bị")
+            } catch (_: GetCredentialException) {
+                setError("Không mở được đăng nhập Google, vui lòng thử lại")
+            } catch (_: Exception) {
+                setError("Không thể đăng nhập Google, vui lòng thử lại")
             }
         }
     }
+
 }
 
-private suspend fun registerDeviceToken(accessToken: String) {
+internal suspend fun registerDeviceToken(accessToken: String) {
     try {
         val fcmToken = withContext(Dispatchers.IO) {
             Tasks.await(

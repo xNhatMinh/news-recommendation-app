@@ -7,15 +7,11 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.newsrecommendation.api.RetrofitClient
-import com.example.newsrecommendation.storage.TokenManager
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
-    private val tokenManager = TokenManager(application)
     private val pageSize = 20
     private var nextOffset = 0
     private var searchJob: Job? = null
@@ -41,12 +37,11 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         fetchArticles(uiState.query, append = true)
     }
 
-    private fun showError(message: String, needsLogin: Boolean = false) {
+    private fun showError(message: String) {
         uiState = uiState.copy(
             isLoading = false,
             isLoadingMore = false,
-            errorMessage = message,
-            needsLogin = needsLogin
+            errorMessage = message
         )
     }
 
@@ -62,13 +57,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
         searchJob = viewModelScope.launch {
             try {
-                val token = withContext(Dispatchers.IO) { tokenManager.getToken() }
-                if (token.isNullOrBlank()) {
-                    showError("Bạn cần đăng nhập lại", needsLogin = true)
-                    return@launch
-                }
                 val response = RetrofitClient.apiService.searchArticles(
-                    authorization = "Bearer $token",
                     query = query,
                     limit = pageSize,
                     offset = offset
@@ -84,8 +73,6 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                         isLoadingMore = false,
                         errorMessage = ""
                     )
-                } else if (response.code() == 401) {
-                    showError("Phiên đã hết hạn, hãy đăng nhập lại", needsLogin = true)
                 } else {
                     showError("Không thể tìm kiếm, vui lòng thử lại")
                 }

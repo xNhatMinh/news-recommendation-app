@@ -25,7 +25,7 @@ class HomeViewModel(
     private val tokenManager = TokenManager(application)
     private val pageSize = 20
     private var nextOffset = 0
-    private var checkingNotificationCount = false
+    private var notificationJob: Job? = null
     private var hasLoaded = false
     private var loadJob: Job? = null
 
@@ -33,9 +33,8 @@ class HomeViewModel(
         private set
 
     fun loadNotificationCount() {
-        if (checkingNotificationCount) return
-        checkingNotificationCount = true
-        viewModelScope.launch {
+        if (notificationJob?.isActive == true) return
+        notificationJob = viewModelScope.launch {
             try {
                 val token = withContext(Dispatchers.IO) { tokenManager.getToken() }
                 if (token.isNullOrBlank()) return@launch
@@ -51,10 +50,17 @@ class HomeViewModel(
                 throw e
             } catch (_: Exception) {
                 // Chuông sẽ kiểm tra lại khi màn hình đang mở.
-            } finally {
-                checkingNotificationCount = false
             }
         }
+    }
+
+    fun onSessionChanged(isLoggedIn: Boolean) {
+        if (!isLoggedIn) {
+            notificationJob?.cancel()
+            uiState = uiState.copy(unreadNotificationCount = 0, needsLogin = false)
+            if (uiState.selectedFilter == "Dành cho bạn") loadNews("Mới nhất")
+        }
+        loadInitialNews()
     }
 
     fun loadInitialNews() {
@@ -118,19 +124,15 @@ class HomeViewModel(
 
         loadJob = viewModelScope.launch {
             try {
-                val token = withContext(Dispatchers.IO) {
-                    tokenManager.getToken()
-                }
-
-                if (token.isNullOrBlank()) {
-                    setError("Bạn cần đăng nhập lại", needsLogin = true)
-                    return@launch
-                }
-
                 if (filter == "Dành cho bạn") {
+                    val token = withContext(Dispatchers.IO) { tokenManager.getToken() }
+                    if (token.isNullOrBlank()) {
+                        setError("Bạn cần đăng nhập để xem tin gợi ý", needsLogin = true)
+                        return@launch
+                    }
                     loadRecommendations(token)
                 } else {
-                    loadLatestArticles(token, filter, append)
+                    loadLatestArticles(filter, append)
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -169,10 +171,9 @@ class HomeViewModel(
         }
     }
 
-    private suspend fun loadLatestArticles(token: String, filter: String, append: Boolean) {
+    private suspend fun loadLatestArticles(filter: String, append: Boolean) {
         val offset = if (append) nextOffset else 0
         val response = RetrofitClient.apiService.getLatestArticles(
-            authorization = "Bearer $token",
             limit = pageSize,
             offset = offset,
             category = if (filter == "Mới nhất") null else filter

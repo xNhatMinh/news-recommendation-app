@@ -25,7 +25,11 @@ import com.example.newsrecommendation.ui.viewmodel.ArticleDetailViewModel
 fun ArticleDetailScreen(
     url: String,
     onBackClick: () -> Unit,
+    isLoggedIn: Boolean,
     onLoginClick: () -> Unit,
+    onSessionExpired: (Boolean) -> Unit,
+    saveAfterLogin: Boolean,
+    onSaveHandled: () -> Unit,
     viewModel: ArticleDetailViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
@@ -34,9 +38,17 @@ fun ArticleDetailScreen(
         viewModel.loadArticle(url)
     }
 
+    LaunchedEffect(isLoggedIn, uiState.article?.url) {
+        if (isLoggedIn && uiState.article != null) viewModel.loadBookmarkStatus()
+        else viewModel.clearBookmarkState()
+    }
     LaunchedEffect(uiState.needsLogin) {
-        if (uiState.needsLogin) {
-            onLoginClick()
+        if (uiState.needsLogin) onSessionExpired(uiState.resumeBookmark)
+    }
+    LaunchedEffect(saveAfterLogin, isLoggedIn, uiState.isSaved, uiState.isCheckingBookmark) {
+        if (saveAfterLogin && isLoggedIn && uiState.isSaved != null && !uiState.isCheckingBookmark) {
+            if (uiState.isSaved == false) viewModel.toggleBookmark()
+            onSaveHandled()
         }
     }
 
@@ -63,24 +75,28 @@ fun ArticleDetailScreen(
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.titleLarge
             )
-            IconButton(
-                onClick = { viewModel.toggleBookmark() },
-                enabled = uiState.article != null && uiState.isSaved != null &&
-                    !uiState.isCheckingBookmark && !uiState.isUpdatingBookmark
-            ) {
-                Icon(
-                    painter = painterResource(
-                        if (uiState.isSaved == true) R.drawable.ic_bookmark_filled
-                        else R.drawable.ic_bookmark_outline
-                    ),
-                    contentDescription = if (uiState.isSaved == true) "Bỏ lưu bài báo" else "Lưu bài để đọc sau",
-                    tint = if (uiState.isSaved == true) MaterialTheme.colorScheme.primary
-                           else LocalContentColor.current
-                )
+            if (isLoggedIn) {
+                IconButton(
+                    onClick = { viewModel.toggleBookmark() },
+                    enabled = uiState.article != null && uiState.isSaved != null &&
+                        !uiState.isCheckingBookmark && !uiState.isUpdatingBookmark
+                ) {
+                    Icon(
+                        painter = painterResource(
+                            if (uiState.isSaved == true) R.drawable.ic_bookmark_filled
+                            else R.drawable.ic_bookmark_outline
+                        ),
+                        contentDescription = if (uiState.isSaved == true) "Bỏ lưu bài báo" else "Lưu bài để đọc sau",
+                        tint = if (uiState.isSaved == true) MaterialTheme.colorScheme.primary
+                               else LocalContentColor.current
+                    )
+                }
+            } else {
+                TextButton(onClick = onLoginClick) { Text("Đăng nhập") }
             }
         }
 
-        if (uiState.bookmarkError.isNotEmpty()) {
+        if (isLoggedIn && uiState.bookmarkError.isNotEmpty()) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically

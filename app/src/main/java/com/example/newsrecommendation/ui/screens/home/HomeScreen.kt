@@ -60,7 +60,13 @@ import androidx.compose.material3.FilterChip
 
 @Composable
 fun HomeScreen(
+    isLoggedIn: Boolean,
     onLogoutClick: () -> Unit,
+    onLoginClick: () -> Unit,
+    onForYouLoginClick: () -> Unit,
+    onSessionExpired: (Boolean) -> Unit,
+    openForYouAfterLogin: Boolean,
+    onForYouHandled: () -> Unit,
     onPreferencesClick: () -> Unit,
     onSummaryClick: () -> Unit,
     onNotificationsClick: () -> Unit,
@@ -74,7 +80,11 @@ fun HomeScreen(
     var showMenu by remember { mutableStateOf(false) }
 
     val selectedFilter = uiState.selectedFilter
-    val filters = listOf("Mới nhất", "Dành cho bạn") + uiState.categories
+    val filters = if (isLoggedIn) {
+        listOf("Mới nhất", "Dành cho bạn") + uiState.categories
+    } else {
+        listOf("Mới nhất") + uiState.categories
+    }
     val visibleArticles = uiState.articles
     val listState = rememberLazyListState()
 
@@ -83,12 +93,19 @@ fun HomeScreen(
         onPreferencesClick()
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadInitialNews()
+    LaunchedEffect(isLoggedIn) {
+        viewModel.onSessionChanged(isLoggedIn)
+    }
+    LaunchedEffect(openForYouAfterLogin, isLoggedIn) {
+        if (openForYouAfterLogin && isLoggedIn) {
+            viewModel.loadNews("Dành cho bạn")
+            onForYouHandled()
+        }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
+    LaunchedEffect(lifecycleOwner, isLoggedIn) {
+        if (!isLoggedIn) return@LaunchedEffect
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             while (true) {
                 viewModel.loadNotificationCount()
@@ -121,32 +138,34 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = "Mở menu"
-                    )
-                }
+            if (isLoggedIn) {
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Mở menu"
+                        )
+                    }
 
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Bài đã lưu") },
-                        onClick = {
-                            showMenu = false
-                            onSavedArticlesClick()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Đăng xuất") },
-                        onClick = {
-                            showMenu = false
-                            onLogoutClick()
-                        }
-                    )
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Bài đã lưu") },
+                            onClick = {
+                                showMenu = false
+                                onSavedArticlesClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Đăng xuất") },
+                            onClick = {
+                                showMenu = false
+                                onLogoutClick()
+                            }
+                        )
+                    }
                 }
             }
 
@@ -161,46 +180,54 @@ fun HomeScreen(
                 Icon(Icons.Default.Search, contentDescription = "Tìm kiếm bài báo")
             }
 
-            IconButton(onClick = { openPreferences() }) {
-                Icon(
-                    imageVector = Icons.Default.FavoriteBorder,
-                    contentDescription = "Chủ đề yêu thích"
-                )
-            }
+            if (isLoggedIn) {
+                IconButton(onClick = { openPreferences() }) {
+                    Icon(
+                        imageVector = Icons.Default.FavoriteBorder,
+                        contentDescription = "Chủ đề yêu thích"
+                    )
+                }
 
-            IconButton(onClick = onNotificationsClick) {
-                BadgedBox(badge = {
-                    if (uiState.unreadNotificationCount > 0) {
-                        Badge { Text(if (uiState.unreadNotificationCount > 99) "99+" else uiState.unreadNotificationCount.toString()) }
+                IconButton(onClick = onNotificationsClick) {
+                    BadgedBox(badge = {
+                        if (uiState.unreadNotificationCount > 0) {
+                            Badge { Text(if (uiState.unreadNotificationCount > 99) "99+" else uiState.unreadNotificationCount.toString()) }
+                        }
+                    }) {
+                        Icon(Icons.Default.Notifications, contentDescription = "Thông báo")
                     }
-                }) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Thông báo")
+                }
+            } else {
+                TextButton(onClick = onLoginClick) {
+                    Text("Đăng nhập", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
 
-        TabRow(
-            selectedTabIndex = 0,
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.primary
-        ) {
-            Tab(
-                selected = true,
-                onClick = {
-                    viewModel.loadNews("Mới nhất")
-                },
-                text = {
-                    Text("Tin tức")
-                }
-            )
+        if (isLoggedIn) {
+            TabRow(
+                selectedTabIndex = 0,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary
+            ) {
+                Tab(
+                    selected = true,
+                    onClick = {
+                        viewModel.loadNews("Mới nhất")
+                    },
+                    text = {
+                        Text("Tin tức")
+                    }
+                )
 
-            Tab(
-                selected = false,
-                onClick = onSummaryClick,
-                text = {
-                    Text("Tổng hợp")
-                }
-            )
+                Tab(
+                    selected = false,
+                    onClick = onSummaryClick,
+                    text = {
+                        Text("Tổng hợp")
+                    }
+                )
+            }
         }
 
         LazyRow(
@@ -211,7 +238,9 @@ fun HomeScreen(
                 FilterChip(
                     selected = selectedFilter == filter,
                     onClick = {
-                        if (filter != selectedFilter) {
+                        if (filter == "Dành cho bạn" && !isLoggedIn) {
+                            onForYouLoginClick()
+                        } else if (filter != selectedFilter) {
                             viewModel.loadNews(filter)
                         }
                     },
@@ -242,7 +271,7 @@ fun HomeScreen(
 
         LaunchedEffect(uiState.needsLogin) {
             if (uiState.needsLogin) {
-                onLogoutClick()
+                onSessionExpired(selectedFilter == "Dành cho bạn")
             }
         }
 

@@ -1,6 +1,12 @@
 package com.example.newsrecommendation.ui.screens.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.activity.compose.BackHandler
+import android.app.Activity
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import com.example.newsrecommendation.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,22 +27,30 @@ import androidx.compose.ui.text.input.VisualTransformation
 fun LoginScreen(
     onRegisterClick: () -> Unit,
     onLoginSuccess: () -> Unit,
+    onCancelClick: () -> Unit,
     viewModel: LoginViewModel = viewModel()
 ){
+    val context = LocalContext.current
     val email = viewModel.email
     val password = viewModel.password
     val uiState = viewModel.uiState
     var errorMessage by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var showForgotPassword by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        viewModel.checkSavedLogin()
-    }
+    BackHandler(onBack = onCancelClick)
 
     LaunchedEffect(uiState.isLoggedIn) {
         if (uiState.isLoggedIn) {
             onLoginSuccess()
         }
+    }
+
+    if (showForgotPassword) {
+        ForgotPasswordDialog(
+            initialEmail = email,
+            onDismiss = { showForgotPassword = false }
+        )
     }
 
     Column (
@@ -92,7 +106,15 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        TextButton(
+            onClick = { showForgotPassword = true },
+            enabled = !uiState.isLoading,
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Quên mật khẩu?")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = {
@@ -108,7 +130,7 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .height(52.dp)
         ) {
-            if (uiState.isLoading) {
+            if (uiState.isLoading && !uiState.isGoogleLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = MaterialTheme.colorScheme.onPrimary,
@@ -116,6 +138,32 @@ fun LoginScreen(
                 )
             } else {
                 Text("Đăng nhập")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = {
+                val activity = context as? Activity
+                if (activity != null) viewModel.loginWithGoogle(activity)
+            },
+            enabled = !uiState.isLoading,
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, Color(0xFF747775)),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = Color.White, contentColor = Color(0xFF1F1F1F)
+            )
+        ) {
+            if (uiState.isGoogleLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(
+                    painterResource(R.drawable.ic_google), contentDescription = null,
+                    tint = Color.Unspecified, modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Tiếp tục với Google")
             }
         }
 
@@ -148,10 +196,14 @@ fun LoginScreen(
             Text("Chưa có tài khoản?")
 
             TextButton(
-                onClick = onRegisterClick
+                onClick = onRegisterClick,
+                enabled = !uiState.isLoading
             ) {
                 Text("Đăng ký")
             }
+        }
+        TextButton(onClick = onCancelClick) {
+            Text("Tiếp tục đọc tin")
         }
     }
 

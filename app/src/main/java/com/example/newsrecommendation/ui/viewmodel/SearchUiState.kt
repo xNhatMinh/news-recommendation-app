@@ -9,6 +9,5 @@ data class SearchUiState(
     val hasMore: Boolean = false,
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
-    val errorMessage: String = "",
-    val needsLogin: Boolean = false
+    val errorMessage: String = ""
 )

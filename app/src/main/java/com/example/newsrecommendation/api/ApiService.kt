@@ -32,6 +32,16 @@ interface ApiService {
         @Body request: LoginRequest
     ): Response<LoginResponse>
 
+    @POST("auth/google")
+    suspend fun loginGoogle(
+        @Body request: GoogleLoginRequest
+    ): Response<LoginResponse>
+
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(
+        @Body request: PasswordResetRequest
+    ): Response<PasswordResetResponse>
+
     @GET("auth/me")
     suspend fun getCurrentUser(
         @Header("Authorization") authorization: String
@@ -68,7 +78,6 @@ interface ApiService {
 
     @GET("articles/latest")
     suspend fun getLatestArticles(
-        @Header("Authorization") authorization: String,
         @Query("limit") limit: Int = 20,
         @Query("offset") offset: Int = 0,
         @Query("category") category: String? = null
@@ -76,7 +85,6 @@ interface ApiService {
 
     @GET("articles/search")
     suspend fun searchArticles(
-        @Header("Authorization") authorization: String,
         @Query("q") query: String,
         @Query("limit") limit: Int = 20,
         @Query("offset") offset: Int = 0
@@ -109,7 +117,6 @@ interface ApiService {
 
     @GET("articles/detail")
     suspend fun getArticleDetail(
-        @Header("Authorization") authorization: String,
         @Query("url") url: String
     ): Response<ArticleDetail>
     @GET("notifications")

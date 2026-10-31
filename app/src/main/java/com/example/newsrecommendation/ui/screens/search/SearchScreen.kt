@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,7 +29,6 @@ import com.example.newsrecommendation.ui.viewmodel.SearchViewModel
 @Composable
 fun SearchScreen(
     onBackClick: () -> Unit,
-    onLoginClick: () -> Unit,
     onArticleClick: (String) -> Unit,
     viewModel: SearchViewModel = viewModel()
 ) {
@@ -40,10 +38,6 @@ fun SearchScreen(
     fun submitSearch() {
         keyboard?.hide()
         viewModel.search()
-    }
-
-    LaunchedEffect(state.needsLogin) {
-        if (state.needsLogin) onLoginClick()
     }
 
     Column(
