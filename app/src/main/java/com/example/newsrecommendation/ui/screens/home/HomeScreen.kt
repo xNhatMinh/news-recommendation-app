@@ -35,6 +35,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -63,6 +64,8 @@ fun HomeScreen(
     onPreferencesClick: () -> Unit,
     onSummaryClick: () -> Unit,
     onNotificationsClick: () -> Unit,
+    onSearchClick: () -> Unit,
+    onSavedArticlesClick: () -> Unit,
     onArticleClick: (String) -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
@@ -131,6 +134,13 @@ fun HomeScreen(
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
+                        text = { Text("Bài đã lưu") },
+                        onClick = {
+                            showMenu = false
+                            onSavedArticlesClick()
+                        }
+                    )
+                    DropdownMenuItem(
                         text = { Text("Đăng xuất") },
                         onClick = {
                             showMenu = false
@@ -141,11 +151,15 @@ fun HomeScreen(
             }
 
             Text(
-                text = "Bản tin",
+                text = "Newsora",
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
+
+            IconButton(onClick = onSearchClick) {
+                Icon(Icons.Default.Search, contentDescription = "Tìm kiếm bài báo")
+            }
 
             IconButton(onClick = { openPreferences() }) {
                 Icon(

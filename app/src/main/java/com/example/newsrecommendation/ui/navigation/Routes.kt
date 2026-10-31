@@ -6,6 +6,8 @@ object Routes{
 
     const val HOME = "home"
     const val NOTIFICATIONS = "notifications"
+    const val SEARCH = "search"
+    const val SAVED_ARTICLES = "saved_articles"
 
     const val PREFERENCES = "preferences"
 

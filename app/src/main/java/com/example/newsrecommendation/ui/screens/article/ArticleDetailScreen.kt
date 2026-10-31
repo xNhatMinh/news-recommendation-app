@@ -14,6 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
+import com.example.newsrecommendation.R
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.newsrecommendation.model.ArticleDetail
@@ -58,8 +60,39 @@ fun ArticleDetailScreen(
 
             Text(
                 text = "Đọc bài báo",
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.titleLarge
             )
+            IconButton(
+                onClick = { viewModel.toggleBookmark() },
+                enabled = uiState.article != null && uiState.isSaved != null &&
+                    !uiState.isCheckingBookmark && !uiState.isUpdatingBookmark
+            ) {
+                Icon(
+                    painter = painterResource(
+                        if (uiState.isSaved == true) R.drawable.ic_bookmark_filled
+                        else R.drawable.ic_bookmark_outline
+                    ),
+                    contentDescription = if (uiState.isSaved == true) "Bỏ lưu bài báo" else "Lưu bài để đọc sau",
+                    tint = if (uiState.isSaved == true) MaterialTheme.colorScheme.primary
+                           else LocalContentColor.current
+                )
+            }
+        }
+
+        if (uiState.bookmarkError.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    uiState.bookmarkError,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+                TextButton(onClick = { viewModel.loadBookmarkStatus() }) { Text("Thử lại") }
+            }
         }
 
         when {

@@ -74,6 +74,39 @@ interface ApiService {
         @Query("category") category: String? = null
     ): Response<LatestArticlesResponse>
 
+    @GET("articles/search")
+    suspend fun searchArticles(
+        @Header("Authorization") authorization: String,
+        @Query("q") query: String,
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0
+    ): Response<SearchArticlesResponse>
+
+    @GET("bookmarks")
+    suspend fun getBookmarks(
+        @Header("Authorization") authorization: String,
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0
+    ): Response<SavedArticlesResponse>
+
+    @GET("bookmarks/status")
+    suspend fun getBookmarkStatus(
+        @Header("Authorization") authorization: String,
+        @Query("url") url: String
+    ): Response<BookmarkStatus>
+
+    @PUT("bookmarks")
+    suspend fun saveBookmark(
+        @Header("Authorization") authorization: String,
+        @Body request: BookmarkRequest
+    ): Response<BookmarkStatus>
+
+    @DELETE("bookmarks")
+    suspend fun removeBookmark(
+        @Header("Authorization") authorization: String,
+        @Query("url") url: String
+    ): Response<BookmarkStatus>
+
     @GET("articles/detail")
     suspend fun getArticleDetail(
         @Header("Authorization") authorization: String,
