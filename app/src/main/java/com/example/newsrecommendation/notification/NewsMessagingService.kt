@@ -11,6 +11,8 @@ import androidx.core.app.NotificationCompat
 import android.app.PendingIntent
 import android.content.Intent
 import com.example.newsrecommendation.MainActivity
+import com.example.newsrecommendation.R
+import androidx.core.content.ContextCompat
 
 class NewsMessagingService : FirebaseMessagingService() {
 
@@ -44,16 +46,28 @@ class NewsMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val title = message.notification?.title ?: message.data["title"] ?: "Tin mới"
+        val body = message.notification?.body ?: message.data["body"].orEmpty()
+        val tag = message.data["notification_tag"]
+            ?: message.notification?.tag
+            ?: message.data["article_url"]
+            ?: message.messageId
+            ?: "newsora_${System.currentTimeMillis()}"
+
         val notification = NotificationCompat.Builder(this, "news_alerts")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(message.notification?.title ?: "Tin mới")
-            .setContentText(message.notification?.body.orEmpty())
+            .setSmallIcon(R.drawable.ic_stat_newsora)
+            .setColor(ContextCompat.getColor(this, R.color.newsora_notification))
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setSubText(message.data["topic"])
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setOnlyAlertOnce(true)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()
 
         val manager = getSystemService(NotificationManager::class.java)
-        manager.notify(1, notification)
+        manager.notify(tag, 0, notification)
     }
 }
