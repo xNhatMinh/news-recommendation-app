@@ -63,7 +63,6 @@ fun HomeScreen(
     isLoggedIn: Boolean,
     onLogoutClick: () -> Unit,
     onLoginClick: () -> Unit,
-    onForYouLoginClick: () -> Unit,
     onSessionExpired: (Boolean) -> Unit,
     openForYouAfterLogin: Boolean,
     onForYouHandled: () -> Unit,
@@ -238,9 +237,7 @@ fun HomeScreen(
                 FilterChip(
                     selected = selectedFilter == filter,
                     onClick = {
-                        if (filter == "Dành cho bạn" && !isLoggedIn) {
-                            onForYouLoginClick()
-                        } else if (filter != selectedFilter) {
+                        if (filter != selectedFilter) {
                             viewModel.loadNews(filter)
                         }
                     },

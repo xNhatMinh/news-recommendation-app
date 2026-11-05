@@ -34,7 +34,6 @@ fun LoginScreen(
     val email = viewModel.email
     val password = viewModel.password
     val uiState = viewModel.uiState
-    var errorMessage by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var showForgotPassword by remember { mutableStateOf(false) }
 
@@ -178,13 +177,6 @@ fun LoginScreen(
             Text(
                 text = uiState.successMessage,
                 color = MaterialTheme.colorScheme.primary
-            )
-        }
-
-        if (errorMessage.isNotEmpty()) {
-            Text(
-                text = errorMessage,
-                color = MaterialTheme.colorScheme.error
             )
         }
 

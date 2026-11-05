@@ -16,8 +16,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import android.util.Log
-import com.google.firebase.messaging.FirebaseMessaging
 import android.app.NotificationChannel
 import android.app.NotificationManager
 
@@ -55,13 +53,6 @@ class MainActivity : ComponentActivity() {
                 notificationPermissionLauncher.launch(permission)
             }
         }
-        FirebaseMessaging.getInstance().token
-            .addOnSuccessListener {
-                Log.d("FCM_TOKEN", it)
-            }
-            .addOnFailureListener {
-                Log.e("FCM_TOKEN", "Không lấy được token", it)
-            }
         setContent {
             NewsRecommendationTheme(
                 darkTheme = false,

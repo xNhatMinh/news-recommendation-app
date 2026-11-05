@@ -176,13 +176,6 @@ fun AppNavHost(
             HomeScreen(
                 isLoggedIn = session.isLoggedIn,
                 onLoginClick = { requestLogin(prompt = false) },
-                onForYouLoginClick = {
-                    scope.launch {
-                        session.awaitRestored()
-                        if (session.isLoggedIn) openForYouAfterLogin = true
-                        else requestLogin(FOR_YOU)
-                    }
-                },
                 openForYouAfterLogin = openForYouAfterLogin,
                 onForYouHandled = { openForYouAfterLogin = false },
                 onSessionExpired = { fromPersonalized -> expireSession(if (fromPersonalized) FOR_YOU else null) },

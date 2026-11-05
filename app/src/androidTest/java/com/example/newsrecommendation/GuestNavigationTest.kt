@@ -147,7 +147,7 @@ class GuestNavigationTest {
             NewsRecommendationTheme(darkTheme = false, dynamicColor = false) {
                 HomeScreen(
                     isLoggedIn = signedIn,
-                    onLogoutClick = {}, onLoginClick = {}, onForYouLoginClick = {},
+                    onLogoutClick = {}, onLoginClick = {},
                     onSessionExpired = {}, openForYouAfterLogin = false, onForYouHandled = {},
                     onPreferencesClick = {}, onSummaryClick = {}, onNotificationsClick = {},
                     onSearchClick = {}, onSavedArticlesClick = {}, onArticleClick = {},

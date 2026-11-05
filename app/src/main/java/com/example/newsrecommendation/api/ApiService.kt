@@ -6,15 +6,7 @@ import com.example.newsrecommendation.model.UserResponse
 import com.example.newsrecommendation.model.ArticleDetail
 import retrofit2.http.Header
 
-
-data class HealthResponse(
-    val status: String
-)
-
 interface ApiService {
-
-    @GET("health")
-    suspend fun healthCheck(): Response<HealthResponse>
 
     @POST("recommend")
     suspend fun getRecommendations(
