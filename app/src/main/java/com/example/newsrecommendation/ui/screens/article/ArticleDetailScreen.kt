@@ -1,10 +1,13 @@
 package com.example.newsrecommendation.ui.screens.article
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import android.text.TextUtils.htmlEncode
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -14,6 +17,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.res.painterResource
 import com.example.newsrecommendation.R
 import androidx.compose.ui.viewinterop.AndroidView
@@ -33,6 +43,8 @@ fun ArticleDetailScreen(
     viewModel: ArticleDetailViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
+    val density = LocalDensity.current
+    var selectionAnchor by remember(url) { mutableStateOf<IntRect?>(null) }
 
     LaunchedEffect(url) {
         viewModel.loadArticle(url)
@@ -50,6 +62,10 @@ fun ArticleDetailScreen(
             if (uiState.isSaved == false) viewModel.toggleBookmark()
             onSaveHandled()
         }
+    }
+
+    BackHandler(enabled = uiState.selectedTerm.isNotEmpty()) {
+        viewModel.dismissExplanation()
     }
 
     Column(
@@ -144,8 +160,17 @@ fun ArticleDetailScreen(
                                 .fillMaxWidth()
                                 .weight(1f),
                             factory = { context ->
-                                WebView(context).apply {
-                                    settings.javaScriptEnabled = false
+                                SelectionWebView(
+                                    context,
+                                    onAnchorChanged = { selectionAnchor = it },
+                                    onSelectionCleared = {
+                                        selectionAnchor = null
+                                        viewModel.dismissExplanation()
+                                    },
+                                    onTermSelected = { viewModel.explainTerm(it) }
+                                ).apply {
+                                    // Selection is read by native evaluateJavascript; document scripts are blocked by CSP.
+                                    settings.javaScriptEnabled = true
                                     settings.allowFileAccess = false
                                     settings.allowContentAccess = false
 
@@ -176,6 +201,47 @@ fun ArticleDetailScreen(
                 }
             }
         }
+
+        val anchor = selectionAnchor
+        if (uiState.selectedTerm.isNotEmpty() && anchor != null) {
+            Popup(
+                popupPositionProvider = TermPopupPositionProvider(anchor, with(density) { 12.dp.roundToPx() }, with(density) { 24.dp.roundToPx() }),
+                onDismissRequest = { viewModel.dismissExplanation() },
+                properties = PopupProperties(focusable = false, dismissOnBackPress = true,
+                    dismissOnClickOutside = true, clippingEnabled = true)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp), tonalElevation = 3.dp, shadowElevation = 8.dp,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Column(Modifier.widthIn(max = 300.dp).heightIn(max = 220.dp)
+                        .verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(uiState.selectedTerm, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, maxLines = 2)
+                            IconButton(onClick = { viewModel.dismissExplanation() }, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.Close, contentDescription = "Đóng giải thích", modifier = Modifier.size(18.dp))
+                            }
+                        }
+                        when {
+                            uiState.isExplainingTerm -> Row(verticalAlignment = Alignment.CenterVertically) {
+                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                                Spacer(Modifier.width(8.dp)); Text("Đang giải thích…", style = MaterialTheme.typography.bodySmall)
+                            }
+                            uiState.termError.isNotEmpty() -> {
+                                Text(uiState.termError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                                TextButton(onClick = {
+                                    viewModel.explainTerm(uiState.selectedTerm)
+                                }) { Text("Thử lại") }
+                            }
+                            else -> Text(uiState.termExplanation, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Text("Giải thích bằng AI", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+                    }
+                }
+            }
+        }
+
     }
 }
 
@@ -201,7 +267,7 @@ private fun buildArticleHtml(article: ArticleDetail): String {
             <meta name="viewport"
                   content="width=device-width, initial-scale=1">
             <meta http-equiv="Content-Security-Policy"
-                  content="default-src 'none';
+                  content="default-src 'none'; script-src 'none';
                            img-src https: http: data:;
                            style-src 'unsafe-inline';">
             <style>

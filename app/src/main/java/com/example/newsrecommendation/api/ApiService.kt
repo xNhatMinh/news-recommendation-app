@@ -7,6 +7,11 @@ import com.example.newsrecommendation.model.ArticleDetail
 import retrofit2.http.Header
 
 interface ApiService {
+    @POST("articles/explain-term")
+    suspend fun explainTerm(
+        @Body request: TermExplanationRequest
+    ): Response<TermExplanationResponse>
+
 
     @POST("recommend")
     suspend fun getRecommendations(

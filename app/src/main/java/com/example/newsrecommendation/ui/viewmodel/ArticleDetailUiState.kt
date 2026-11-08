@@ -11,5 +11,9 @@ data class ArticleDetailUiState(
     val isSaved: Boolean? = null,
     val isCheckingBookmark: Boolean = false,
     val isUpdatingBookmark: Boolean = false,
-    val bookmarkError: String = ""
+    val bookmarkError: String = "",
+    val selectedTerm: String = "",
+    val termExplanation: String = "",
+    val termError: String = "",
+    val isExplainingTerm: Boolean = false
 )
