@@ -198,6 +198,4 @@ fun LoginScreen(
             Text("Tiếp tục đọc tin")
         }
     }
-
-
 }

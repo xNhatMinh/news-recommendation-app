@@ -115,19 +115,22 @@ class LoginViewModel (
                 val response = RetrofitClient.apiService.login(request)
 
                 if (response.isSuccessful) {
-                    val token = response.body()?.access_token
+                    val body = response.body()
+                    if(body != null) {
+                        val token = body.access_token
 
-                    if(token.isNullOrBlank()) {
-                        setError("Backend không trả về token hợp lệ")
-                    } else {
-                        // đa luồng
-                        // chuyển việc ghi file sang luồng dành cho đọc/ghi dữ liệu
-                        // giúp giao diện không bị chặn.
-                        withContext(Dispatchers.IO) {
-                            tokenManager.saveToken(token)
+                        if(token.isNullOrBlank()) {
+                            setError("Backend không trả về token hợp lệ")
+                        } else {
+                            // đa luồng
+                            // chuyển việc ghi file sang luồng dành cho đọc/ghi dữ liệu
+                            // giúp giao diện không bị chặn.
+                            withContext(Dispatchers.IO) {
+                                tokenManager.saveToken(token)
+                            }
+
+                            setSuccess("Đăng nhập thành công")
                         }
-
-                        setSuccess("Đăng nhập thành công")
                     }
                 } else {
                     val message = when (response.code()) {
