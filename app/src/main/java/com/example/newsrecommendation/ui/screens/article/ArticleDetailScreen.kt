@@ -214,18 +214,11 @@ fun ArticleDetailScreen(
                 ),
                 onDismissRequest = {
                     viewModel.dismissExplanation()
-                },
-                properties = PopupProperties(
-                    focusable = false,
-                    dismissOnBackPress = true,
-                    dismissOnClickOutside = true,
-                    clippingEnabled = true
-                )
+                }
             ) {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     tonalElevation = 3.dp,
-                    shadowElevation = 8.dp,
                     border = BorderStroke(
                         1.dp,
                         MaterialTheme.colorScheme.outlineVariant
