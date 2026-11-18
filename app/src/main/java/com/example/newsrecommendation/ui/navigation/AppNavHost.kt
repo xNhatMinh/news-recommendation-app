@@ -59,7 +59,6 @@ fun AppNavHost(
     var pendingBookmarkUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var saveAfterLoginUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var openForYouAfterLogin by rememberSaveable { mutableStateOf(false) }
-    var showLoginPrompt by rememberSaveable { mutableStateOf(false) }
     var handlingExpiry by remember { mutableStateOf(false) }
 
     fun articleRoute(url: String) = "${Routes.ARTICLE_DETAIL}?url=${Uri.encode(url)}"
@@ -71,14 +70,14 @@ fun AppNavHost(
     fun clearPendingLogin() {
         pendingDestination = null
         pendingBookmarkUrl = null
-        showLoginPrompt = false
     }
 
-    fun requestLogin(destination: String? = null, bookmarkUrl: String? = null, prompt: Boolean = true) {
+    fun requestLogin(destination: String? = null, bookmarkUrl: String? = null) {
         pendingDestination = destination
         pendingBookmarkUrl = bookmarkUrl
-        if (prompt) showLoginPrompt = true
-        else navController.navigate(Routes.LOGIN) { launchSingleTop = true }
+        navController.navigate(Routes.LOGIN) {
+            launchSingleTop = true
+        }
     }
 
     fun openProtected(destination: String) {
@@ -133,16 +132,11 @@ fun AppNavHost(
         val bookmarkUrl = pendingBookmarkUrl
         session.onLoggedIn()
         clearPendingLogin()
-        val target = when {
-            bookmarkUrl != null -> {
-                saveAfterLoginUrl = bookmarkUrl
-                articleRoute(bookmarkUrl)
-            }
-            destination == FOR_YOU -> {
-                openForYouAfterLogin = true
-                Routes.HOME
-            }
-            else -> destination
+        val target = if (bookmarkUrl != null) {
+            saveAfterLoginUrl = bookmarkUrl
+            articleRoute(bookmarkUrl)
+        } else {
+            destination
         }
         returnFromLogin(target)
     }
@@ -175,10 +169,12 @@ fun AppNavHost(
         composable(Routes.HOME) {
             HomeScreen(
                 isLoggedIn = session.isLoggedIn,
-                onLoginClick = { requestLogin(prompt = false) },
+                onLoginClick = { requestLogin() },
                 openForYouAfterLogin = openForYouAfterLogin,
                 onForYouHandled = { openForYouAfterLogin = false },
-                onSessionExpired = { fromPersonalized -> expireSession(if (fromPersonalized) FOR_YOU else null) },
+                onSessionExpired = { fromPersonalized ->
+                    expireSession(if (fromPersonalized) Routes.HOME else null)
+                },
                 onLogoutClick = {
                     scope.launch {
                         removeCurrentDevice(tokenManager)
@@ -197,20 +193,26 @@ fun AppNavHost(
                 onSavedArticlesClick = { openProtected(Routes.SAVED_ARTICLES) },
                 onSearchClick = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                 onNotificationsClick = { openProtected(Routes.NOTIFICATIONS) },
-                onArticleClick = { openArticle(it) }
+                onArticleClick = { url: String ->
+                    openArticle(url)
+                }
             )
         }
         composable(Routes.SEARCH) {
             SearchScreen(
                 onBackClick = { navController.popBackStack() },
-                onArticleClick = { openArticle(it) }
+                onArticleClick = { url: String ->
+                    openArticle(url)
+                }
             )
         }
         composable(Routes.SAVED_ARTICLES) {
             RequireSession(session, { expireSession(Routes.SAVED_ARTICLES) }) {
                 SavedArticlesScreen(
                     onBackClick = { navController.popBackStack() },
-                    onArticleClick = { openArticle(it) },
+                    onArticleClick = { url: String ->
+                        openArticle(url)
+                    },
                     onLoginClick = { expireSession(Routes.SAVED_ARTICLES) }
                 )
             }
@@ -219,7 +221,9 @@ fun AppNavHost(
             RequireSession(session, { expireSession(Routes.NOTIFICATIONS) }) {
                 NotificationsScreen(
                     onBackClick = { navController.popBackStack() },
-                    onArticleClick = { openArticle(it) },
+                    onArticleClick = { url: String ->
+                        openArticle(url)
+                    },
                     onLoginClick = { expireSession(Routes.NOTIFICATIONS) }
                 )
             }
@@ -236,7 +240,9 @@ fun AppNavHost(
             RequireSession(session, { expireSession(Routes.SUMMARY) }) {
                 SummaryScreen(
                     onBackClick = { navController.popBackStack() },
-                    onArticleClick = { openArticle(it) },
+                    onArticleClick = { url: String ->
+                        openArticle(url)
+                    },
                     onLoginClick = { expireSession(Routes.SUMMARY) }
                 )
             }
@@ -250,7 +256,7 @@ fun AppNavHost(
                 url = url,
                 isLoggedIn = session.isLoggedIn,
                 onBackClick = { navController.popBackStack() },
-                onLoginClick = { requestLogin(prompt = false) },
+                onLoginClick = { requestLogin() },
                 onSessionExpired = { resumeSave ->
                     if (resumeSave) expireSession(articleRoute(url), bookmarkUrl = url)
                     else expireSession()
@@ -259,21 +265,6 @@ fun AppNavHost(
                 onSaveHandled = { saveAfterLoginUrl = null }
             )
         }
-    }
-
-    if (showLoginPrompt) {
-        AlertDialog(
-            onDismissRequest = { clearPendingLogin() },
-            title = { Text("Đăng nhập để tiếp tục") },
-            text = { Text("Tính năng này cần tài khoản để lưu dữ liệu và cá nhân hóa tin cho bạn.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showLoginPrompt = false
-                    navController.navigate(Routes.LOGIN) { launchSingleTop = true }
-                }) { Text("Đăng nhập") }
-            },
-            dismissButton = { TextButton(onClick = { clearPendingLogin() }) { Text("Để sau") } }
-        )
     }
 }
 
@@ -287,8 +278,10 @@ private fun RequireSession(
         content()
     } else {
         Column(
-            modifier = Modifier.fillMaxSize()
-                .background(MaterialTheme.colorScheme.background).padding(24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
         ) {
@@ -322,12 +315,6 @@ private suspend fun removeCurrentDevice(tokenManager: TokenManager) {
             authorization = "Bearer $accessToken",
             request = DeviceTokenRequest(fcm_token = fcmToken)
         )
-
-        if (response.isSuccessful) {
-            Log.d("FCM_DEVICE", "Đã gỡ liên kết thiết bị")
-        } else {
-            Log.w("FCM_DEVICE", "Gỡ thiết bị thất bại: ${response.code()}")
-        }
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {

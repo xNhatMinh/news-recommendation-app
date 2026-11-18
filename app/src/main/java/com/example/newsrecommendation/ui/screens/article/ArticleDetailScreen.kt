@@ -114,7 +114,9 @@ fun ArticleDetailScreen(
 
         if (isLoggedIn && uiState.bookmarkError.isNotEmpty()) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -192,7 +194,6 @@ fun ArticleDetailScreen(
                                     )
                                 }
                             },
-                            onReset = null,
                             onRelease = { view ->
                                 view.destroy()
                             }
@@ -203,19 +204,40 @@ fun ArticleDetailScreen(
         }
 
         val anchor = selectionAnchor
+
         if (uiState.selectedTerm.isNotEmpty() && anchor != null) {
             Popup(
-                popupPositionProvider = TermPopupPositionProvider(anchor, with(density) { 12.dp.roundToPx() }, with(density) { 24.dp.roundToPx() }),
-                onDismissRequest = { viewModel.dismissExplanation() },
-                properties = PopupProperties(focusable = false, dismissOnBackPress = true,
-                    dismissOnClickOutside = true, clippingEnabled = true)
+                popupPositionProvider = TermPopupPositionProvider(
+                    anchor,
+                    with(density) { 12.dp.roundToPx() },
+                    with(density) { 24.dp.roundToPx() }
+                ),
+                onDismissRequest = {
+                    viewModel.dismissExplanation()
+                },
+                properties = PopupProperties(
+                    focusable = false,
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = true,
+                    clippingEnabled = true
+                )
             ) {
                 Surface(
-                    shape = RoundedCornerShape(16.dp), tonalElevation = 3.dp, shadowElevation = 8.dp,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    shape = RoundedCornerShape(16.dp),
+                    tonalElevation = 3.dp,
+                    shadowElevation = 8.dp,
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant
+                    )
                 ) {
-                    Column(Modifier.widthIn(max = 300.dp).heightIn(max = 220.dp)
-                        .verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 8.dp)) {
+                    Column(
+                        Modifier
+                            .widthIn(max = 300.dp)
+                            .heightIn(max = 220.dp)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(uiState.selectedTerm, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, maxLines = 2)
                             IconButton(onClick = { viewModel.dismissExplanation() }, modifier = Modifier.size(32.dp)) {
@@ -241,7 +263,6 @@ fun ArticleDetailScreen(
                 }
             }
         }
-
     }
 }
 

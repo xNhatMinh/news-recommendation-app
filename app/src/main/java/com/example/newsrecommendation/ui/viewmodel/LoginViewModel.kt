@@ -24,6 +24,7 @@ import com.google.android.gms.tasks.Tasks
 import com.google.firebase.messaging.FirebaseMessaging
 import com.example.newsrecommendation.model.DeviceTokenRequest
 import java.util.concurrent.TimeUnit
+
 class LoginViewModel (
     application: Application
 ) : AndroidViewModel(application) {
@@ -205,11 +206,6 @@ internal suspend fun registerDeviceToken(accessToken: String) {
             request = DeviceTokenRequest(fcm_token = fcmToken)
         )
 
-        if (response.isSuccessful) {
-            Log.d("FCM_DEVICE", "Đã đăng ký thiết bị")
-        } else {
-            Log.w("FCM_DEVICE", "Lưu token thất bại: ${response.code()}")
-        }
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
