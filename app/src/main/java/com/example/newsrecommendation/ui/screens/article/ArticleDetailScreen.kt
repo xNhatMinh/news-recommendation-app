@@ -232,18 +232,31 @@ fun ArticleDetailScreen(
                             .padding(horizontal = 14.dp, vertical = 8.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(uiState.selectedTerm, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, maxLines = 2)
-                            IconButton(onClick = { viewModel.dismissExplanation() }, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.Close, contentDescription = "Đóng giải thích", modifier = Modifier.size(18.dp))
+                            Text(
+                                uiState.selectedTerm,
+                                Modifier.weight(1f),
+                                style = MaterialTheme.typography.titleSmall,
+                                maxLines = 2)
+                            IconButton(
+                                onClick = { viewModel.dismissExplanation() },
+                                modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.Close,
+                                    contentDescription = "Đóng giải thích",
+                                    modifier = Modifier.size(18.dp))
                             }
                         }
                         when {
-                            uiState.isExplainingTerm -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            uiState.isExplainingTerm ->
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                 CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                                Spacer(Modifier.width(8.dp)); Text("Đang giải thích…", style = MaterialTheme.typography.bodySmall)
+                                Spacer(Modifier.width(8.dp));
+                                Text("Đang giải thích…",
+                                    style = MaterialTheme.typography.bodySmall)
                             }
                             uiState.termError.isNotEmpty() -> {
-                                Text(uiState.termError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                                Text(uiState.termError,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall)
                                 TextButton(onClick = {
                                     viewModel.explainTerm(uiState.selectedTerm)
                                 }) { Text("Thử lại") }
@@ -258,7 +271,6 @@ fun ArticleDetailScreen(
         }
     }
 }
-
 private fun buildArticleHtml(article: ArticleDetail): String {
     val plainContent = htmlEncode(article.content)
         .replace("\n", "<br>")
