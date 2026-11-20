@@ -108,6 +108,7 @@ fun HomeScreen(
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             while (true) {
                 viewModel.loadNotificationCount()
+                viewModel.refreshForYouIfSelected()
                 delay(30_000)
             }
         }

@@ -81,6 +81,14 @@ class HomeViewModel(
         fetchArticles(filter, append = false)
     }
 
+    fun refreshForYouIfSelected() {
+        if (uiState.selectedFilter != "Dành cho bạn" ||
+            uiState.isLoading || uiState.isLoadingMore || loadJob?.isActive == true
+        ) return
+
+        fetchArticles("Dành cho bạn", append = false, keepCurrentArticles = true)
+    }
+
     fun loadMore() {
         if (uiState.isLoading || uiState.isLoadingMore || !uiState.hasMore) return
         fetchArticles(uiState.selectedFilter, append = true)
@@ -103,7 +111,11 @@ class HomeViewModel(
         }
     }
 
-    private fun fetchArticles(filter: String, append: Boolean) {
+    private fun fetchArticles(
+        filter: String,
+        append: Boolean,
+        keepCurrentArticles: Boolean = false
+    ) {
         loadJob?.cancel()
 
         if (append) {
@@ -113,9 +125,9 @@ class HomeViewModel(
             hasLoaded = false
             uiState = uiState.copy(
                 selectedFilter = filter,
-                isLoading = true,
+                isLoading = !keepCurrentArticles,
                 isLoadingMore = false,
-                articles = emptyList(),
+                articles = if (keepCurrentArticles) uiState.articles else emptyList(),
                 hasMore = false,
                 errorMessage = "",
                 needsLogin = false
