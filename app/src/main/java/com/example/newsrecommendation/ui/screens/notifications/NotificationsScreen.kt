@@ -43,8 +43,7 @@ fun NotificationsScreen(
     val state = viewModel.uiState
     val lifecycleOwner = LocalLifecycleOwner.current
     val busy = state.isLoading || state.isLoadingMore || state.isUpdating || state.openingId != null
-    val readAllColor = if (!busy && state.unreadCount > 0) MaterialTheme.colorScheme.primary
-                       else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+    val readAllColor = MaterialTheme.colorScheme.primary
 
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -131,7 +130,9 @@ fun NotificationsScreen(
 }
 
 @Composable
-private fun NotificationRow(item: NotificationItem, enabled: Boolean, onClick: () -> Unit) {
+private fun NotificationRow(item: NotificationItem,
+                            enabled: Boolean,
+                            onClick: () -> Unit) {
     Surface(
         onClick = onClick, enabled = enabled,
         color = if (item.is_read) MaterialTheme.colorScheme.surface
